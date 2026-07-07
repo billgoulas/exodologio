@@ -7,10 +7,9 @@ import { useI18n } from '@/lib/i18n-context';
 import { useUser } from '@/lib/user-context';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, DATE_FORMATS } from '@/lib/constants';
 import { Transaction } from '@/lib/types';
-import { formatDate, formatCurrency } from '@/lib/utils-calc';
+import { formatDate, formatCurrency, parseDate, toISODateString, generateId } from '@/lib/utils-calc';
 
-// Generate UUID locally
-const generateId = () => Math.random().toString(36).substr(2, 9);
+const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export default function AddTransactionScreen() {
   const router = useRouter();
@@ -21,7 +20,7 @@ export default function AddTransactionScreen() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0].id);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(toISODateString(new Date()));
   const [notes, setNotes] = useState('');
 
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
@@ -29,12 +28,19 @@ export default function AddTransactionScreen() {
   const currencySymbol = CURRENCY_SYMBOLS[currency];
   const dateFormat = state.settings.dateFormat;
 
-  // Format the display date based on selected format
-  const displayDate = formatDate(date, dateFormat);
+  const [dateInput, setDateInput] = useState(formatDate(date, dateFormat));
 
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
     setCategory(newType === 'income' ? INCOME_CATEGORIES[0].id : EXPENSE_CATEGORIES[0].id);
+  };
+
+  const handleDateInputChange = (text: string) => {
+    setDateInput(text);
+    const parsed = parseDate(text, dateFormat);
+    if (parsed) {
+      setDate(toISODateString(parsed));
+    }
   };
 
   const handleAmountChange = (text: string) => {
@@ -42,16 +48,18 @@ export default function AddTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    
+    const sep = escapeRegExp(decimalSeparator);
+    const otherSep = escapeRegExp(otherSeparator);
+
     // Replace other separator with the correct one
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
-    
+    let formatted = text.replace(new RegExp(otherSep, 'g'), decimalSeparator);
+
     // Allow only numbers and one decimal separator, max 2 decimal places
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
-    
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
+
     setAmount(formatted);
   };
 
@@ -60,8 +68,9 @@ export default function AddTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = amount.replace(decimalSeparator, '.');
-    
-    if (!amount || parseFloat(standardAmount) <= 0) {
+    const parsedAmount = parseFloat(standardAmount);
+
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
       Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -69,7 +78,7 @@ export default function AddTransactionScreen() {
     const transaction: Transaction = {
       id: generateId(),
       type,
-      amount: parseFloat(standardAmount),
+      amount: parsedAmount,
       category: category as any,
       date,
       notes,
@@ -82,7 +91,7 @@ export default function AddTransactionScreen() {
   };
 
   return (
-    <ScreenContainer className="p-4">
+    <ScreenContainer className="p-4" edges={["top", "left", "right", "bottom"]}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
@@ -216,18 +225,13 @@ export default function AddTransactionScreen() {
           <Text className="text-base font-semibold text-foreground mb-2">
             {t('transaction.date')}
           </Text>
-          <View className="border border-border rounded-lg px-4 py-3 bg-surface">
-            <Text className="text-foreground text-base">
-              {displayDate}
-            </Text>
-          </View>
           <TextInput
-            value={date}
-            onChangeText={setDate}
-            placeholder="YYYY-MM-DD"
-            className="border border-border rounded-lg px-4 py-3 text-foreground mt-2"
+            value={dateInput}
+            onChangeText={handleDateInputChange}
+            placeholder={dateFormat}
+            keyboardType="numbers-and-punctuation"
+            className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
             placeholderTextColor="#687076"
-            style={{ display: 'none' }}
           />
         </View>
 

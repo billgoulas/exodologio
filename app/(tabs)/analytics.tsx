@@ -103,7 +103,7 @@ export default function AnalyticsScreen() {
           }]}
         >
           <Text className="text-white font-bold text-center text-base">
-            Διαγράμματα
+            {t('analytics.charts')}
           </Text>
         </Pressable>
       </ScrollView>

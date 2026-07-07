@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
+import Svg, { Path, Circle, G } from 'react-native-svg';
 import { PieChartData } from '@/lib/charts-utils';
 import { formatNumber } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
@@ -8,9 +8,10 @@ interface PieChartProps {
   data: PieChartData[];
   title: string;
   language: Language;
+  t: (key: string) => string;
 }
 
-export function PieChart({ data, title, language }: PieChartProps) {
+export function PieChart({ data, title, language, t }: PieChartProps) {
   const size = 200;
   const radius = 80;
   const centerX = size / 2;
@@ -45,6 +46,7 @@ export function PieChart({ data, title, language }: PieChartProps) {
 
     return {
       path: pathData,
+      isFullCircle: data.length === 1,
       color: item.color,
       labelX,
       labelY,
@@ -63,22 +65,25 @@ export function PieChart({ data, title, language }: PieChartProps) {
           <View className="items-center mb-6">
             <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
               <G>
-                {slices.map((slice, index) => (
-                  <G key={index}>
-                    <Circle
-                      cx={slice.labelX}
-                      cy={slice.labelY}
-                      r="3"
+                {slices.map((slice, index) =>
+                  slice.isFullCircle ? (
+                    <Circle key={index} cx={centerX} cy={centerY} r={radius} fill={slice.color} />
+                  ) : (
+                    <Path
+                      key={index}
+                      d={slice.path}
                       fill={slice.color}
+                      stroke="#FFFFFF"
+                      strokeWidth={1}
                     />
-                  </G>
-                ))}
+                  )
+                )}
               </G>
             </Svg>
           </View>
         ) : (
           <View className="items-center justify-center py-8">
-            <Text className="text-muted">No data available</Text>
+            <Text className="text-muted">{t('analytics.noData')}</Text>
           </View>
         )}
 
@@ -97,13 +102,13 @@ export function PieChart({ data, title, language }: PieChartProps) {
               </View>
               <View className="ml-6">
                 <Text className="text-sm text-muted mb-1">
-                  Amount: {formatNumber(item.amount, language)}
+                  {t('transaction.amount')}: {formatNumber(item.amount, language)}
                 </Text>
                 <Text className="text-sm text-muted mb-1">
-                  Percentage: {item.percentage.toFixed(2)}%
+                  {t('analytics.percentage')}: {item.percentage.toFixed(2)}%
                 </Text>
                 <Text className="text-sm text-muted">
-                  Transactions: {item.count}
+                  {t('chartsModal.transactionsCount')}: {item.count}
                 </Text>
               </View>
             </View>

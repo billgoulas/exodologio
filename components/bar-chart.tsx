@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from 'react-native';
-import Svg, { Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Rect, G, Text as SvgText } from 'react-native-svg';
 import { DailyChartData, WeeklyChartData, MonthlyChartData } from '@/lib/charts-utils';
 import { formatNumber } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
@@ -11,14 +11,15 @@ interface BarChartProps {
   title: string;
   language: Language;
   type: 'daily' | 'weekly' | 'monthly';
+  t: (key: string) => string;
 }
 
-export function BarChart({ data, title, language, type }: BarChartProps) {
+export function BarChart({ data, title, language, type, t }: BarChartProps) {
   if (data.length === 0) {
     return (
       <ScrollView className="flex-1">
         <View className="items-center justify-center py-8">
-          <Text className="text-muted">No data available</Text>
+          <Text className="text-muted">{t('analytics.noData')}</Text>
         </View>
       </ScrollView>
     );
@@ -55,7 +56,7 @@ export function BarChart({ data, title, language, type }: BarChartProps) {
             const expenseHeight = maxValue > 0 ? (item.expense / maxValue) * chartHeight : 0;
 
             return (
-              <View key={index}>
+              <G key={index}>
                 {/* Income bar (green) */}
                 <Rect
                   x={x}
@@ -72,7 +73,7 @@ export function BarChart({ data, title, language, type }: BarChartProps) {
                   height={expenseHeight}
                   fill="#EF4444"
                 />
-              </View>
+              </G>
             );
           })}
         </Svg>
@@ -81,11 +82,11 @@ export function BarChart({ data, title, language, type }: BarChartProps) {
         <View className="flex-row justify-center gap-6 mt-4 mb-6">
           <View className="flex-row items-center">
             <View className="w-4 h-4 rounded bg-green-500 mr-2" />
-            <Text className="text-sm text-foreground">Income</Text>
+            <Text className="text-sm text-foreground">{t('transaction.income')}</Text>
           </View>
           <View className="flex-row items-center">
             <View className="w-4 h-4 rounded bg-red-500 mr-2" />
-            <Text className="text-sm text-foreground">Expense</Text>
+            <Text className="text-sm text-foreground">{t('transaction.expense')}</Text>
           </View>
         </View>
 
@@ -100,13 +101,13 @@ export function BarChart({ data, title, language, type }: BarChartProps) {
               </Text>
               <View className="ml-4">
                 <Text className="text-sm text-muted mb-1">
-                  Income: {formatNumber(item.income, language)} ({item.incomeCount} transactions)
+                  {t('transaction.income')}: {formatNumber(item.income, language)} ({item.incomeCount} {t('chartsModal.transactionsCount')})
                 </Text>
                 <Text className="text-sm text-muted mb-1">
-                  Expense: {formatNumber(item.expense, language)} ({item.expenseCount} transactions)
+                  {t('transaction.expense')}: {formatNumber(item.expense, language)} ({item.expenseCount} {t('chartsModal.transactionsCount')})
                 </Text>
                 <Text className="text-sm text-muted">
-                  Balance: {formatNumber(item.balance, language)}
+                  {t('home.balance')}: {formatNumber(item.balance, language)}
                 </Text>
               </View>
             </View>

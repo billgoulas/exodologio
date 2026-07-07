@@ -55,6 +55,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
         transactions: action.payload,
       };
     case 'SET_LANGUAGE': {
+      // Only auto-switch the currency when the language is actually changing —
+      // re-selecting the already-active language must not discard a currency
+      // the user picked manually afterwards.
+      if (action.payload === state.settings.language) {
+        return state;
+      }
       const { DEFAULT_CURRENCY_BY_LANGUAGE } = require('./constants');
       const newCurrency = DEFAULT_CURRENCY_BY_LANGUAGE[action.payload] || 'EUR';
       return {
@@ -85,7 +91,9 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'LOAD_STATE':
       return action.payload;
     case 'CLEAR_ALL':
-      return defaultState;
+      // "Delete All Data" clears transactions only — it must not silently
+      // revert the user's language/currency/date-format/theme preferences.
+      return { ...state, transactions: [] };
     default:
       return state;
   }
@@ -181,9 +189,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const importTransactions = useCallback((transactions: Transaction[]) => {
-    // Merge with existing transactions, avoiding duplicates by ID
+    // Merge with existing transactions, avoiding duplicates by ID.
+    // Reject malformed entries (e.g. non-numeric amount) so a bad import
+    // file can't poison every total/aggregate with NaN.
+    const isValidTransaction = (t: Transaction) =>
+      typeof t?.id === 'string' && t.id.length > 0 &&
+      (t.type === 'income' || t.type === 'expense') &&
+      typeof t.category === 'string' && t.category.length > 0 &&
+      typeof t.amount === 'number' && isFinite(t.amount) &&
+      typeof t.date === 'string' && t.date.length > 0;
+
     const existingIds = new Set(state.transactions.map((t) => t.id));
-    const newTransactions = transactions.filter((t) => !existingIds.has(t.id));
+    const newTransactions = transactions.filter((t) => isValidTransaction(t) && !existingIds.has(t.id));
     const mergedTransactions = [...state.transactions, ...newTransactions];
     dispatch({ type: 'SET_TRANSACTIONS', payload: mergedTransactions });
   }, [state.transactions]);

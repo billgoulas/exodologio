@@ -18,7 +18,7 @@ import * as Application from 'expo-application';
 
 export default function SettingsScreen() {
   const { state, setLanguage, setCurrency, setDateFormat, setTheme, exportData, clearAllData, importTransactions, saveState } = useAppContext();
-  const { username, pin, verifyPin, updateUsername, updatePin } = useUser();
+  const { username, pin, verifyPin, updateUsername, updatePin, setPin } = useUser();
   const { t } = useI18n();
   const colors = useColors();
   
@@ -94,7 +94,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, jsonString);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
+            Alert.alert(t('common.error'), t('settings.sharing_unavailable'));
             return;
           }
 
@@ -106,7 +106,7 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('Export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
+        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
       }
     } else if (pendingAction === 'export_txt') {
       try {
@@ -167,7 +167,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, txtContent);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
+            Alert.alert(t('common.error'), t('settings.sharing_unavailable'));
             return;
           }
 
@@ -179,12 +179,12 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('TXT export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
+        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
       }
     } else if (pendingAction === 'import') {
       try {
         if (!selectedImportFile) {
-          Alert.alert(t('common.error'), 'No file selected');
+          Alert.alert(t('common.error'), t('settings.no_file_selected'));
           setPendingAction(null);
           return;
         }
@@ -212,7 +212,7 @@ export default function SettingsScreen() {
 
         // Verify it has transactions
         if (!importedData.transactions || !Array.isArray(importedData.transactions)) {
-          Alert.alert(t('common.error'), 'Invalid backup file format');
+          Alert.alert(t('common.error'), t('settings.invalid_backup_format'));
           setPendingAction(null);
           setSelectedImportFile(null);
           return;
@@ -228,12 +228,12 @@ export default function SettingsScreen() {
 
         Alert.alert(
           t('common.success'),
-          `${importedData.transactions.length} transactions imported successfully`
+          `${t('settings.importSuccess')} (${importedData.transactions.length})`
         );
         setSelectedImportFile(null);
       } catch (error) {
         console.error('Import error:', error);
-        Alert.alert(t('common.error'), 'Failed to import data');
+        Alert.alert(t('common.error'), t('settings.import_failed'));
         setSelectedImportFile(null);
       }
     }
@@ -266,7 +266,7 @@ export default function SettingsScreen() {
       setImportingFile(false);
     } catch (error) {
       console.error('Import error:', error);
-      Alert.alert(t('common.error'), 'Failed to select file');
+      Alert.alert(t('common.error'), t('settings.file_select_failed'));
       setImportingFile(false);
     }
   };
@@ -348,7 +348,7 @@ export default function SettingsScreen() {
 
     try {
       console.log('Setting up initial PIN:', setupNewPin);
-      await updatePin(setupNewPin);
+      await setPin(setupNewPin);
       setSetupNewPin('');
       setSetupConfirmPin('');
       setShowSetupPinForm(false);
@@ -456,12 +456,12 @@ export default function SettingsScreen() {
                 className="bg-primary px-4 py-2 rounded-lg items-center"
                 onPress={() => setShowSetupPinForm(true)}
               >
-                <Text className="text-white font-semibold text-sm">Set PIN</Text>
+                <Text className="text-white font-semibold text-sm">{t('settings.set_pin')}</Text>
               </Pressable>
             </View>
           ) : showSetupPinForm ? (
             <View className="gap-3">
-              <Text className="text-base text-foreground font-semibold mb-2">Set Initial PIN</Text>
+              <Text className="text-base text-foreground font-semibold mb-2">{t('settings.set_initial_pin')}</Text>
               <View className="relative">
                 <TextInput
                   className="border border-border rounded-lg px-4 py-3 pr-12 text-foreground bg-background"

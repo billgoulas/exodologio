@@ -6,7 +6,7 @@ import { SummaryCard } from '@/components/summary-card';
 import { TransactionItem } from '@/components/transaction-item';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
-import { getMonthSummary, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName } from '@/lib/utils-calc';
+import { getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName, parseISODateLocal } from '@/lib/utils-calc';
 
 type DateRangeFilter = 'day' | 'twodays' | 'threedays' | 'week' | 'twoweeks' | 'month' | '3months' | '6months' | 'year' | 'all' | null;
 
@@ -84,10 +84,10 @@ export default function HomeScreen() {
     const { startDate, endDate } = getDateRange();
     return state.transactions
       .filter(tx => {
-        const txDate = new Date(tx.date);
+        const txDate = parseISODateLocal(tx.date);
         return txDate >= startDate && txDate <= endDate;
       })
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      .sort((a, b) => parseISODateLocal(b.date).getTime() - parseISODateLocal(a.date).getTime());
   }, [state.transactions, dateRangeFilter, currentMonth, getDateRange]);
 
   const monthSummary = useMemo(() => {
@@ -186,7 +186,7 @@ export default function HomeScreen() {
                   paddingVertical: 6,
                   marginRight: 8,
                   borderRadius: 20,
-                  backgroundColor: dateRangeFilter === option.value ? '#22C55E' : '#EF4444',
+                  backgroundColor: dateRangeFilter === option.value ? '#22C55E' : '#94A3B8',
                   opacity: pressed ? 0.8 : 1,
                 }]}
               >
@@ -202,16 +202,20 @@ export default function HomeScreen() {
         <View className="px-4 py-4 flex-row items-center justify-between bg-surface border-b border-border">
           <Pressable
             onPress={handlePreviousMonth}
-            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            disabled={dateRangeFilter !== null}
+            style={({ pressed }) => [{ opacity: dateRangeFilter !== null ? 0.3 : pressed ? 0.6 : 1 }]}
           >
             <Text className="text-5xl font-black text-primary">←</Text>
           </Pressable>
           <Text className="text-xl font-bold text-foreground">
-            {monthName} {currentMonth.year}
+            {dateRangeFilter === null
+              ? `${monthName} ${currentMonth.year}`
+              : rangeOptions.find((o) => o.value === dateRangeFilter)?.label}
           </Text>
           <Pressable
             onPress={handleNextMonth}
-            style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+            disabled={dateRangeFilter !== null}
+            style={({ pressed }) => [{ opacity: dateRangeFilter !== null ? 0.3 : pressed ? 0.6 : 1 }]}
           >
             <Text className="text-5xl font-black text-primary">→</Text>
           </Pressable>

@@ -6,7 +6,9 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, DATE_FORMATS } from '@/lib/constants';
 import { Transaction } from '@/lib/types';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, parseDate, toISODateString } from '@/lib/utils-calc';
+
+const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export default function EditTransactionScreen() {
   const router = useRouter();
@@ -17,17 +19,18 @@ export default function EditTransactionScreen() {
   const [type, setType] = useState<'income' | 'expense'>('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState(EXPENSE_CATEGORIES[0].id);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(toISODateString(new Date()));
   const [notes, setNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   const currency = state.settings.currency;
   const currencySymbol = CURRENCY_SYMBOLS[currency];
   const dateFormat = state.settings.dateFormat;
+  const language = state.settings.language;
 
-  // Format the display date based on selected format
-  const displayDate = formatDate(date, dateFormat);
+  const [dateInput, setDateInput] = useState(formatDate(date, dateFormat));
 
   // Load transaction data on mount
   useEffect(() => {
@@ -35,45 +38,66 @@ export default function EditTransactionScreen() {
       const transaction = state.transactions.find(t => t.id === id);
       if (transaction) {
         setType(transaction.type);
-        setAmount(transaction.amount.toString());
+        const decimalSeparator = state.settings.language === 'el' ? ',' : '.';
+        setAmount(transaction.amount.toString().replace('.', decimalSeparator));
         setCategory(transaction.category);
         setDate(transaction.date);
+        setDateInput(formatDate(transaction.date, state.settings.dateFormat));
         setNotes(transaction.notes || '');
+      } else {
+        setNotFound(true);
       }
     }
     setIsLoading(false);
-  }, [id, state.transactions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  useEffect(() => {
+    if (notFound) {
+      Alert.alert(t('common.error'), t('transaction.notFound') || 'Transaction not found');
+      router.back();
+    }
+  }, [notFound]);
 
   const handleTypeChange = (newType: 'income' | 'expense') => {
     setType(newType);
     setCategory(newType === 'income' ? INCOME_CATEGORIES[0].id : EXPENSE_CATEGORIES[0].id);
   };
 
+  const handleDateInputChange = (text: string) => {
+    setDateInput(text);
+    const parsed = parseDate(text, dateFormat);
+    if (parsed) {
+      setDate(toISODateString(parsed));
+    }
+  };
+
   const handleAmountChange = (text: string) => {
     // Get decimal separator based on language
-    const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    
+    const sep = escapeRegExp(decimalSeparator);
+    const otherSep = escapeRegExp(otherSeparator);
+
     // Replace other separator with the correct one
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
-    
+    let formatted = text.replace(new RegExp(otherSep, 'g'), decimalSeparator);
+
     // Allow only numbers and one decimal separator, max 2 decimal places
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
-    
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
+
     setAmount(formatted);
   };
 
   const handleSave = () => {
     // Convert amount to standard format (with dot) for parsing
-    const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = amount.replace(decimalSeparator, '.');
-    
-    if (!amount || parseFloat(standardAmount) <= 0) {
+    const parsedAmount = parseFloat(standardAmount);
+
+    if (!amount || isNaN(parsedAmount) || parsedAmount <= 0) {
       Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -83,7 +107,7 @@ export default function EditTransactionScreen() {
       const updatedTransaction: Transaction = {
         id,
         type,
-        amount: parseFloat(standardAmount),
+        amount: parsedAmount,
         category: category as any,
         date,
         notes,
@@ -144,7 +168,7 @@ export default function EditTransactionScreen() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || notFound) {
     return (
       <ScreenContainer className="p-4 items-center justify-center">
         <Text className="text-foreground">{t('common.loading')}</Text>
@@ -153,7 +177,7 @@ export default function EditTransactionScreen() {
   }
 
   return (
-    <ScreenContainer className="p-4">
+    <ScreenContainer className="p-4" edges={["top", "left", "right", "bottom"]}>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
@@ -255,12 +279,14 @@ export default function EditTransactionScreen() {
         {/* Date Input */}
         <View className="mb-4">
           <Text className="text-sm font-semibold text-muted mb-2">{t('transaction.date')}</Text>
-          <Pressable
-            className="bg-surface border border-border rounded-lg px-4 py-3"
-            style={({ pressed }) => [{ opacity: pressed ? 0.7 : 1 }]}
-          >
-            <Text className="text-base text-foreground">{displayDate}</Text>
-          </Pressable>
+          <TextInput
+            value={dateInput}
+            onChangeText={handleDateInputChange}
+            placeholder={dateFormat}
+            placeholderTextColor="#999"
+            keyboardType="numbers-and-punctuation"
+            className="bg-surface border border-border rounded-lg px-4 py-3 text-foreground text-base"
+          />
         </View>
 
         {/* Notes Input */}

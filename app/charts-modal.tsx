@@ -50,11 +50,11 @@ export default function ChartsModal() {
   );
 
   const tabs: { id: TabType; label: string }[] = [
-    { id: 'expensePie', label: 'Expense Categories' },
-    { id: 'incomePie', label: 'Income Categories' },
-    { id: 'daily', label: 'Daily' },
-    { id: 'weekly', label: 'Weekly' },
-    { id: 'monthly', label: 'Monthly' },
+    { id: 'expensePie', label: t('chartsModal.expenseCategories') },
+    { id: 'incomePie', label: t('chartsModal.incomeCategories') },
+    { id: 'daily', label: t('chartsModal.daily') },
+    { id: 'weekly', label: t('chartsModal.weekly') },
+    { id: 'monthly', label: t('chartsModal.monthly') },
   ];
 
   const handleReturn = () => {
@@ -67,43 +67,48 @@ export default function ChartsModal() {
         return (
           <PieChart
             data={expensePieData}
-            title="Expense Distribution by Category"
+            title={t('chartsModal.expenseDistribution')}
             language={state.settings.language}
+            t={t}
           />
         );
       case 'incomePie':
         return (
           <PieChart
             data={incomePieData}
-            title="Income Distribution by Category"
+            title={t('chartsModal.incomeDistribution')}
             language={state.settings.language}
+            t={t}
           />
         );
       case 'daily':
         return (
           <BarChart
             data={dailyData}
-            title="Daily Trends"
+            title={t('chartsModal.dailyTrends')}
             language={state.settings.language}
             type="daily"
+            t={t}
           />
         );
       case 'weekly':
         return (
           <BarChart
             data={weeklyData}
-            title="Weekly Trends"
+            title={t('chartsModal.weeklyTrends')}
             language={state.settings.language}
             type="weekly"
+            t={t}
           />
         );
       case 'monthly':
         return (
           <BarChart
             data={monthlyData}
-            title="Monthly Trends"
+            title={t('chartsModal.monthlyTrends')}
             language={state.settings.language}
             type="monthly"
+            t={t}
           />
         );
       default:
@@ -115,7 +120,7 @@ export default function ChartsModal() {
     <ScreenContainer className="p-0 flex-1">
       {/* Header */}
       <View className="px-4 py-4 flex-row items-center justify-between bg-surface border-b border-border">
-        <Text className="text-2xl font-bold text-foreground">Διαγράμματα</Text>
+        <Text className="text-2xl font-bold text-foreground">{t('analytics.charts')}</Text>
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
@@ -176,7 +181,7 @@ export default function ChartsModal() {
           }]}
         >
           <Text className="text-white font-bold text-center text-base">
-            Επιστροφή
+            {t('analytics.return')}
           </Text>
         </Pressable>
       </View>
