@@ -37,7 +37,12 @@ export function BarChart({ data, title, language, type, t }: BarChartProps) {
         <Text className="text-lg font-bold text-foreground mb-4">{title}</Text>
 
         {/* Bar Chart SVG */}
-        <Svg width={Math.max(chartWidth, 300)} height={chartHeight + 60} viewBox={`0 0 ${Math.max(chartWidth, 300)} ${chartHeight + 60}`}>
+        <Svg
+          width={Math.max(chartWidth, 300)}
+          height={chartHeight + 60}
+          viewBox={`0 0 ${Math.max(chartWidth, 300)} ${chartHeight + 60}`}
+          style={{ width: Math.max(chartWidth, 300), height: chartHeight + 60, flexShrink: 0 }}
+        >
           {/* Y-axis labels */}
           <SvgText x="5" y="20" fontSize="10" fill="#687076">
             {formatNumber(maxValue, language)}
