@@ -11,7 +11,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
-import { formatDate, parseLocalDateString, toLocalDateString } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString, toLocalDateString, addMonthsClamped } from '@/lib/utils-calc';
 
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -339,12 +339,8 @@ export default function EditTransactionScreen() {
       
       // Generate new transactions
       for (let i = 0; i < remainingCount; i++) {
-        const transactionDate = new Date(currentDate);
-        transactionDate.setMonth(transactionDate.getMonth() + i);
-        const year = transactionDate.getFullYear();
-        const month = String(transactionDate.getMonth() + 1).padStart(2, '0');
-        const day = String(transactionDate.getDate()).padStart(2, '0');
-        const dateString = `${year}-${month}-${day}`;
+        const transactionDate = addMonthsClamped(currentDate, i);
+        const dateString = toLocalDateString(transactionDate);
         
         const newTransaction: Transaction = {
           id: generateId(),

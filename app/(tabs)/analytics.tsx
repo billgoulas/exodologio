@@ -192,6 +192,11 @@ export default function AnalyticsScreen() {
   }, [filteredTransactions]);
 
   const handlePreviousMonth = () => {
+    // A month-nav arrow must override any active custom date range, otherwise
+    // getDateRange() keeps using the custom range and the month label changes
+    // without the data ever updating.
+    setCustomFromDate(null);
+    setCustomToDate(null);
     // Only allow month navigation when no quick-filter button is active
     if (dateRangeFilter === null) {
       setCurrentMonth(getPreviousMonth(currentMonth.month, currentMonth.year));
@@ -199,6 +204,8 @@ export default function AnalyticsScreen() {
   };
 
   const handleNextMonth = () => {
+    setCustomFromDate(null);
+    setCustomToDate(null);
     // Only allow month navigation when no quick-filter button is active
     if (dateRangeFilter === null) {
       setCurrentMonth(getNextMonth(currentMonth.month, currentMonth.year));

@@ -195,6 +195,11 @@ export default function TransactionsScreen() {
   }, [state.transactions, router]);
 
   const handlePreviousMonth = () => {
+    // A month-nav arrow must override any active custom date range, otherwise
+    // getDateRange() keeps using the custom range and the month label changes
+    // without the data ever updating.
+    setCustomFromDate(null);
+    setCustomToDate(null);
     // Only allow month navigation when no quick-filter button is active,
     // otherwise the label changes but getDateRange() keeps using the filter.
     if (dateRangeFilter === null) {
@@ -203,6 +208,8 @@ export default function TransactionsScreen() {
   };
 
   const handleNextMonth = () => {
+    setCustomFromDate(null);
+    setCustomToDate(null);
     if (dateRangeFilter === null) {
       setCurrentMonth(getNextMonth(currentMonth.month, currentMonth.year));
     }

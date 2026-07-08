@@ -9,7 +9,7 @@ import { generateId } from '@/lib/utils-calc';
 import { Transaction } from '@/lib/types';
 import { useI18n } from '@/lib/i18n-context';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString, toLocalDateString, addMonthsClamped } from '@/lib/utils-calc';
 import { buildInstallmentSummaries } from '@/lib/rebuild-installments';
 import { useColors } from '@/hooks/use-colors';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
@@ -128,8 +128,11 @@ export default function EditInstallmentScreen() {
     }
 
     if (id) {
-      // Delete all old transactions associated with this installment
-      const oldTransactions = state.transactions.filter(t => t.installmentId === id);
+      // Delete all old transactions associated with this installment. Legacy/imported
+      // installments have no installmentId set, so buildInstallmentSummaries() falls back
+      // to using the transaction's own id as the installmentId — match on that too, or the
+      // original row survives alongside the newly generated ones and duplicates the amount.
+      const oldTransactions = state.transactions.filter(t => t.installmentId === id || t.id === id);
       oldTransactions.forEach(tx => {
         deleteTransaction(tx.id);
       });
@@ -151,12 +154,8 @@ export default function EditInstallmentScreen() {
       
       // Generate new transactions
       for (let i = 0; i < remainingCount; i++) {
-        const transactionDate = new Date(currentDate);
-        transactionDate.setMonth(transactionDate.getMonth() + i);
-        const year = transactionDate.getFullYear();
-        const month = String(transactionDate.getMonth() + 1).padStart(2, '0');
-        const day = String(transactionDate.getDate()).padStart(2, '0');
-        const dateString = `${year}-${month}-${day}`;
+        const transactionDate = addMonthsClamped(currentDate, i);
+        const dateString = toLocalDateString(transactionDate);
         
         const transaction: Transaction = {
           id: generateId(),
@@ -187,7 +186,9 @@ export default function EditInstallmentScreen() {
 
     const deleteAllInstallmentTransactions = () => {
       if (!id) return;
-      const matching = state.transactions.filter(t => t.installmentId === id);
+      // Same installmentId-or-own-id fallback as handleSave — legacy/imported
+      // installments have no installmentId, so it falls back to their own row id.
+      const matching = state.transactions.filter(t => t.installmentId === id || t.id === id);
       matching.forEach(tx => deleteTransaction(tx.id));
       router.back();
     };

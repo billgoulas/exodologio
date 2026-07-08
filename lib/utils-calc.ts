@@ -39,6 +39,21 @@ export function toLocalDateString(date: Date): string {
 }
 
 /**
+ * Add whole months to a date, clamping the day into the target month instead
+ * of overflowing into the next one. `new Date(2024, 0, 31)` + setMonth(+1)
+ * rolls over to March 2/3 because February has fewer days — for a monthly
+ * installment schedule that silently skips a whole payment month. Clamping
+ * to the last valid day (e.g. Jan 31 -> Feb 29) keeps one payment per month.
+ */
+export function addMonthsClamped(date: Date, monthsToAdd: number): Date {
+  const day = date.getDate();
+  const result = new Date(date.getFullYear(), date.getMonth() + monthsToAdd, 1);
+  const daysInTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(day, daysInTargetMonth));
+  return result;
+}
+
+/**
  * Get transactions for a specific month and year
  */
 export function getTransactionsForMonth(
