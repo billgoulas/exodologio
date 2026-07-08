@@ -2743,6 +2743,14 @@ const NOT_FOUND_TRANSLATIONS: Record<Language, { transaction: string; installmen
   (translations[lang].transaction as Record<string, string>).notFound = notFound.transaction;
   (translations[lang].installment as Record<string, string>).notFound = notFound.installment;
   (translations[lang].installment as Record<string, string>).editTitle = notFound.editTitle;
+
+  // The expense-side "investment"/"gift" categories were renamed to
+  // investment_expense/gift_expense (see lib/constants.ts) so their ids no
+  // longer collide with the identically-named income categories in
+  // ALL_CATEGORIES. The word itself is the same either way.
+  const categories = translations[lang].categories as Record<string, string>;
+  categories.investment_expense = categories.investment;
+  categories.gift_expense = categories.gift;
 });
 
 // Note: Adding root-level PIN translation keys for all remaining languages

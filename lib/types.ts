@@ -5,7 +5,7 @@
 export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export type IncomeCategory = 'salary' | 'freelance' | 'investment' | 'bonus' | 'gift' | 'rent_income' | 'reward' | 'other_income';
-export type ExpenseCategory = 'groceries' | 'department_store' | 'utilities' | 'fuel' | 'restaurant' | 'bakery' | 'greengrocer' | 'butcher' | 'bakery_pastry' | 'pharmacy' | 'snacks' | 'clothing' | 'shoes' | 'entertainment' | 'accessories' | 'books' | 'delivery' | 'tolls' | 'rent' | 'loan' | 'repair' | 'health' | 'borrowed' | 'investment' | 'gift' | 'transport' | 'services' | 'installment' | 'other_expense';
+export type ExpenseCategory = 'groceries' | 'department_store' | 'utilities' | 'fuel' | 'restaurant' | 'bakery' | 'greengrocer' | 'butcher' | 'bakery_pastry' | 'pharmacy' | 'snacks' | 'clothing' | 'shoes' | 'entertainment' | 'accessories' | 'books' | 'delivery' | 'tolls' | 'rent' | 'loan' | 'repair' | 'health' | 'borrowed' | 'investment_expense' | 'gift_expense' | 'transport' | 'services' | 'installment' | 'other_expense';
 export type Category = IncomeCategory | ExpenseCategory;
 
 export type PaymentMethod = 'credit_card' | 'debit_card' | 'toll_card' | 'iris' | 'gift_card' | 'cash' | 'bank_transfer' | 'rewards' | 'investment_account';

@@ -6,12 +6,11 @@ describe('Icon Consistency and Uniqueness', () => {
     const incomeMap = Object.fromEntries(INCOME_CATEGORIES.map(cat => [cat.id, cat.icon]));
     const expenseMap = Object.fromEntries(EXPENSE_CATEGORIES.map(cat => [cat.id, cat.icon]));
 
-    // Check shared categories
-    for (const catId of ['investment', 'gift']) {
-      if (incomeMap[catId] && expenseMap[catId]) {
-        expect(incomeMap[catId]).toBe(expenseMap[catId]);
-      }
-    }
+    // Check the expense-side categories that mirror an income category under
+    // a distinct id (investment_expense/gift_expense) to avoid colliding
+    // React keys with the income category of the same name.
+    expect(incomeMap['investment']).toBe(expenseMap['investment_expense']);
+    expect(incomeMap['gift']).toBe(expenseMap['gift_expense']);
   });
 
   it('should have unique icons within income categories', () => {
@@ -57,14 +56,14 @@ describe('Icon Consistency and Uniqueness', () => {
 
   it('should verify investment icons are consistent', () => {
     const incomeInvestment = INCOME_CATEGORIES.find(cat => cat.id === 'investment');
-    const expenseInvestment = EXPENSE_CATEGORIES.find(cat => cat.id === 'investment');
+    const expenseInvestment = EXPENSE_CATEGORIES.find(cat => cat.id === 'investment_expense');
     expect(incomeInvestment?.icon).toBe('📈');
     expect(expenseInvestment?.icon).toBe('📈');
   });
 
   it('should verify gift icons are consistent', () => {
     const incomeGift = INCOME_CATEGORIES.find(cat => cat.id === 'gift');
-    const expenseGift = EXPENSE_CATEGORIES.find(cat => cat.id === 'gift');
+    const expenseGift = EXPENSE_CATEGORIES.find(cat => cat.id === 'gift_expense');
     expect(incomeGift?.icon).toBe('🎀');
     expect(expenseGift?.icon).toBe('🎀');
   });
