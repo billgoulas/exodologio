@@ -1,7 +1,7 @@
 import { View, Text, ScrollView } from 'react-native';
 import Svg, { Circle, G, Path, Ellipse, Defs, LinearGradient, Stop, Text as SvgText, TSpan } from 'react-native-svg';
 import { PieChartData } from '@/lib/charts-utils';
-import { formatNumber } from '@/lib/utils-calc';
+import { formatNumber, formatPercentage } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
 import { translations } from '@/lib/translations';
 
@@ -13,17 +13,17 @@ interface PieChartProps {
 }
 
 export function PieChart({ data, title, language, currency = '€' }: PieChartProps) {
-  const t = (key: string) => {
+  const t = (key: string, defaultValue: string = key) => {
     const keys = key.split('.');
     let value: any = translations[language] || {};
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        return key;
+        return defaultValue;
       }
     }
-    return typeof value === 'string' ? value : key;
+    return typeof value === 'string' ? value : defaultValue;
   };
 
   const size = 400;
@@ -81,7 +81,7 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
       color: item.color,
       labelX,
       labelY,
-      percentage: item.percentage.toFixed(1),
+      percentage: formatPercentage(item.percentage, language),
       item,
       index,
     };
@@ -147,14 +147,14 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
                   fill="#ffffff"
                   opacity="0.9"
                 >
-                  <TSpan>{slice.percentage}%</TSpan>
+                  <TSpan>{slice.percentage}</TSpan>
                 </SvgText>
               ))}
             </Svg>
           </View>
         ) : (
           <View className="items-center justify-center py-8">
-            <Text className="text-muted">No data available</Text>
+            <Text className="text-muted">{t('analytics.noData')}</Text>
           </View>
         )}
 
@@ -168,7 +168,7 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
                   style={{ backgroundColor: item.color }}
                 />
                 <Text className="text-base font-semibold text-foreground flex-1">
-                  {item.icon} {item.label}
+                  {item.icon} {t(`categories.${item.category}`, item.label)}
                 </Text>
               </View>
               <View className="ml-6">
@@ -176,7 +176,7 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
                   {t('analytics.chartAmount')}: {formatNumber(item.amount, language)} {currency}
                 </Text>
                 <Text className="text-sm text-muted mb-1">
-                  {t('analytics.chartPercentage')}: {item.percentage.toFixed(2)}%
+                  {t('analytics.chartPercentage')}: {formatPercentage(item.percentage, language)}
                 </Text>
                 <Text className="text-sm text-muted">
                   {t('analytics.chartTransactions')}: {item.count}

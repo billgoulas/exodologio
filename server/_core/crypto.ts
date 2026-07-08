@@ -5,7 +5,17 @@ import { ENV } from "./env";
  * Symmetric encryption for secrets we must store at rest (e.g. bank OAuth tokens).
  * The key is derived from the server's existing JWT secret so no extra deployment
  * configuration is required, while still being unique to this server's config.
+ *
+ * If JWT_SECRET is ever missing, deriving from an empty string would produce a
+ * fixed key computable from this source file, silently defeating the whole
+ * point of encrypting tokens at rest — fail loudly at startup instead.
  */
+if (!ENV.cookieSecret) {
+  throw new Error(
+    "JWT_SECRET is not set — refusing to derive a predictable bank-token encryption key. Set JWT_SECRET before starting the server.",
+  );
+}
+
 const ENCRYPTION_KEY = createHash("sha256")
   .update(`${ENV.cookieSecret}:bank-token-encryption`)
   .digest();

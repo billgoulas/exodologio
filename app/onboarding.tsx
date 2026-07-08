@@ -30,22 +30,22 @@ export default function OnboardingScreen() {
   const handleContinue = async () => {
     // Validation
     if (!username.trim()) {
-      Alert.alert(t('error'), t('username_required'));
+      Alert.alert(t('common.error'), t('settings.username_required'));
       return;
     }
 
     if (username.trim().length < 2) {
-      Alert.alert(t('error'), t('username_too_short'));
+      Alert.alert(t('common.error'), t('onboarding.usernameTooShort'));
       return;
     }
 
     if (!pin || pin.length < 4) {
-      Alert.alert(t('error'), t('pin_too_short'));
+      Alert.alert(t('common.error'), t('settings.pin_length_error'));
       return;
     }
 
     if (pin !== confirmPin) {
-      Alert.alert(t('error'), t('pin_mismatch'));
+      Alert.alert(t('common.error'), t('settings.pin_mismatch'));
       return;
     }
 
@@ -62,7 +62,7 @@ export default function OnboardingScreen() {
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Onboarding error:', error);
-      Alert.alert(t('error'), t('setup_failed'));
+      Alert.alert(t('common.error'), t('onboarding.setupFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -77,21 +77,21 @@ export default function OnboardingScreen() {
         {/* Header */}
         <View className="mb-8 items-center">
           <Text className="text-3xl font-bold text-foreground mb-2">
-            {t('welcome')}
+            {t('onboarding.welcome')}
           </Text>
           <Text className="text-base text-muted text-center">
-            {t('setup_profile_description')}
+            {t('onboarding.description')}
           </Text>
         </View>
 
         {/* Username Input */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('username')}
+            {t('settings.username')}
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('enter_username')}
+            placeholder={t('settings.enter_username')}
             placeholderTextColor="#999"
             value={username}
             onChangeText={setUsernameState}
@@ -102,11 +102,11 @@ export default function OnboardingScreen() {
         {/* PIN Input */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('pin')} (4-6 {t('digits')})
+            {t('settings.pin')} (4-6 {t('onboarding.digits')})
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('enter_pin')}
+            placeholder={t('onboarding.enterPin')}
             placeholderTextColor="#999"
             value={pin}
             onChangeText={setPinState}
@@ -120,11 +120,11 @@ export default function OnboardingScreen() {
         {/* Confirm PIN Input */}
         <View className="mb-8">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('confirm_pin')}
+            {t('onboarding.confirmPin')}
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('confirm_pin')}
+            placeholder={t('onboarding.confirmPin')}
             placeholderTextColor="#999"
             value={confirmPin}
             onChangeText={setConfirmPinState}
@@ -142,7 +142,7 @@ export default function OnboardingScreen() {
           disabled={isLoading}
         >
           <Text className="text-white font-semibold text-base">
-            {isLoading ? t('loading') : t('continue')}
+            {isLoading ? t('common.loading') : t('onboarding.continueLabel')}
           </Text>
         </Pressable>
       </ScreenContainer>

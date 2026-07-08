@@ -390,7 +390,6 @@ export default function SettingsScreen() {
     }
 
     try {
-      console.log('Setting up initial PIN:', setupNewPin);
       await updatePin(setupNewPin);
       setSetupNewPin('');
       setSetupConfirmPin('');

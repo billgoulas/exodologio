@@ -14,6 +14,8 @@ import { buildInstallmentSummaries } from '@/lib/rebuild-installments';
 import { useColors } from '@/hooks/use-colors';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 
+const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 export default function EditInstallmentScreen() {
   const router = useRouter();
   const { id, readOnly } = useLocalSearchParams<{ id: string; readOnly?: string }>();
@@ -84,12 +86,13 @@ export default function EditInstallmentScreen() {
     const lang = state.settings.language;
     const decimalSeparator = lang === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
+    const sep = escapeRegExp(decimalSeparator);
 
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
+    let formatted = text.replace(new RegExp(escapeRegExp(otherSeparator), 'g'), decimalSeparator);
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
 
     setAmount(formatted);
   };

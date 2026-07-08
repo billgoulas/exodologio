@@ -149,6 +149,20 @@ export function getMonthSummary(
 // forcing 2 decimals on these reads as wrong to native users.
 const ZERO_DECIMAL_CURRENCIES: Currency[] = ['JPY'];
 
+/**
+ * Format a percentage value (already 0-100, not a 0-1 ratio) using the
+ * language's locale-correct decimal separator, so it matches the amounts
+ * displayed alongside it (formatCurrency/formatNumber both go through Intl).
+ */
+export function formatPercentage(value: number, language: Language = 'el'): string {
+  const locale = LANGUAGE_TO_LOCALE[language] || 'el-GR';
+  const formatter = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${formatter.format(value)}%`;
+}
+
 export function formatCurrency(amount: number, currency: Currency, language: Language = 'el'): string {
   const locale = LANGUAGE_TO_LOCALE[language] || 'el-GR';
   const decimals = ZERO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
