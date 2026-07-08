@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Modal, Alert, Pressable } from 'react-native';
 import { useI18n } from '@/lib/i18n-context';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -16,18 +16,13 @@ export function PinVerificationModal({ visible, onVerify, onCancel }: PinVerific
   const [pin, setPinState] = useState('');
   const [showPin, setShowPin] = useState(false);
 
-  useEffect(() => {
-    if (!visible) {
-      setPinState('');
-    }
-  }, [visible]);
-
   const handleVerify = () => {
     if (!pin) {
-      Alert.alert(t('common.error'), t('pin_required'));
+      Alert.alert(t('error'), t('pin_required'));
       return;
     }
     onVerify(pin);
+    setPinState('');
   };
 
   const handleCancel = () => {
@@ -80,7 +75,7 @@ export function PinVerificationModal({ visible, onVerify, onCancel }: PinVerific
               onPress={handleCancel}
             >
               <Text className="text-foreground font-semibold">
-                {t('common.cancel')}
+                {t('cancel')}
               </Text>
             </TouchableOpacity>
 
@@ -89,7 +84,7 @@ export function PinVerificationModal({ visible, onVerify, onCancel }: PinVerific
               onPress={handleVerify}
             >
               <Text className="text-white font-semibold">
-                {t('common.verify')}
+                {t('verify')}
               </Text>
             </TouchableOpacity>
           </View>

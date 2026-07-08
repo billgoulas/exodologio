@@ -17,29 +17,6 @@ const LANGUAGE_TO_LOCALE: Record<Language, string> = {
 };
 
 /**
- * Parse a stored 'YYYY-MM-DD' date string as a local-time Date.
- * `new Date(dateString)` parses that format as UTC midnight, which shifts
- * to the previous calendar day once read back with local-time getters
- * (getDate/getMonth/getFullYear) in any negative-UTC-offset timezone.
- */
-export function parseISODateLocal(dateString: string): Date {
-  const [year, month, day] = dateString.split('-').map(Number);
-  return new Date(year, month - 1, day);
-}
-
-/**
- * Format a local Date as a 'YYYY-MM-DD' string using local-time getters.
- * `Date.prototype.toISOString()` converts to UTC first, which can shift
- * the calendar day in negative-UTC-offset timezones.
- */
-export function toISODateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
  * Get transactions for a specific month and year
  */
 export function getTransactionsForMonth(
@@ -48,7 +25,7 @@ export function getTransactionsForMonth(
   year: number
 ): Transaction[] {
   return transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 }
@@ -91,13 +68,14 @@ export function getTransactionsByCategory(
     .reduce((sum, t) => sum + t.amount, 0);
 
   transactions
-    .filter((t) => t.type === type)
+    .filter((t) => t.type === type && t.category !== undefined)
     .forEach((t) => {
-      if (!grouped[t.category]) {
-        grouped[t.category] = { total: 0, count: 0 };
+      const cat = t.category!;
+      if (!grouped[cat]) {
+        grouped[cat] = { total: 0, count: 0 };
       }
-      grouped[t.category].total += t.amount;
-      grouped[t.category].count += 1;
+      grouped[cat].total += t.amount;
+      grouped[cat].count += 1;
     });
 
   return Object.entries(grouped)
@@ -150,6 +128,8 @@ export function formatCurrency(amount: number, currency: Currency, language: Lan
   const formatter = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   });
   return formatter.format(amount);
 }
@@ -173,7 +153,7 @@ export function formatNumber(amount: number, language: Language = 'el'): string 
  * Format date based on selected format
  */
 export function formatDate(dateString: string, format: DateFormat): string {
-  const date = parseISODateLocal(dateString);
+  const date = new Date(dateString);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();

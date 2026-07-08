@@ -39,7 +39,7 @@ describe('Dynamic Translations', () => {
       const nav = translations.it.nav as Record<string, string>;
       expect(nav.home).toBe('Home');
       expect(nav.transactions).toBe('Transazioni');
-      expect(nav.analytics).toBe('Analitiche');
+      expect(nav.analytics).toBe('Analisi');
       expect(nav.settings).toBe('Impostazioni');
     });
 
@@ -54,9 +54,9 @@ describe('Dynamic Translations', () => {
     it('should have all navigation labels in Russian', () => {
       const nav = translations.ru.nav as Record<string, string>;
       expect(nav.home).toBe('Главная');
-      expect(nav.transactions).toBe('Операции');
+      expect(nav.transactions).toBe('Транзакции');
       expect(nav.analytics).toBe('Аналитика');
-      expect(nav.settings).toBe('Настройки');
+      expect(nav.settings).toBe('Параметры');
     });
 
     it('should have all navigation labels in Albanian', () => {
@@ -80,7 +80,7 @@ describe('Dynamic Translations', () => {
     it('should have all income categories in Greek', () => {
       const categories = translations.el.categories as Record<string, string>;
       expect(categories.salary).toBe('Μισθός');
-      expect(categories.bonus).toBe('Μπόνους');
+      expect(categories.gift).toBe('Δώρο');
       expect(categories.freelance).toBe('Ελεύθερη Εργασία');
       expect(categories.investment).toBe('Επένδυση');
       expect(categories.other_income).toBe('Άλλο');
@@ -89,20 +89,20 @@ describe('Dynamic Translations', () => {
     it('should have all expense categories in Greek', () => {
       const categories = translations.el.categories as Record<string, string>;
       expect(categories.rent).toBe('Ενοίκιο');
-      expect(categories.groceries).toBe('Σουπερμάρκετ');
+      expect(categories.groceries).toBe('Τρόφιμα');
       expect(categories.transport).toBe('Μεταφορά');
       expect(categories.health).toBe('Υγεία');
-      expect(categories.entertainment).toBe('Διασκέδαση');
+      expect(categories.entertainment).toBe('Ψυχαγωγία');
       expect(categories.repair).toBe('Επισκευή');
-      expect(categories.utilities).toBe('Λογαριασμός');
-      expect(categories.loan).toBe('Δάνειο');
+      expect(categories.utilities).toBe('Λογαριασμοί');
+      expect(categories.accounts).toBe('Διασκέδαση');
       expect(categories.other_expense).toBe('Άλλο');
     });
 
     it('should have all income categories in English', () => {
       const categories = translations.en.categories as Record<string, string>;
       expect(categories.salary).toBe('Salary');
-      expect(categories.bonus).toBe('Bonus');
+      expect(categories.gift).toBe('Gift');
       expect(categories.freelance).toBe('Freelance');
       expect(categories.investment).toBe('Investment');
       expect(categories.other_income).toBe('Other');
@@ -117,7 +117,7 @@ describe('Dynamic Translations', () => {
       expect(categories.entertainment).toBe('Entertainment');
       expect(categories.repair).toBe('Repair');
       expect(categories.utilities).toBe('Utilities');
-      expect(categories.loan).toBe('Loan');
+      expect(categories.accounts).toBe('Accounts');
       expect(categories.other_expense).toBe('Other');
     });
   });
@@ -125,9 +125,9 @@ describe('Dynamic Translations', () => {
   describe('Translation completeness', () => {
     const requiredNavKeys = ['home', 'transactions', 'analytics', 'settings'];
     const requiredCategoryKeys = [
-      'salary', 'bonus', 'freelance', 'investment', 'other_income',
+      'salary', 'gift', 'freelance', 'investment', 'other_income',
       'rent', 'groceries', 'transport', 'health', 'entertainment',
-      'repair', 'utilities', 'loan', 'other_expense'
+      'repair', 'utilities', 'accounts', 'other_expense'
     ];
 
     it('should have all navigation keys in all languages', () => {

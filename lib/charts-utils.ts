@@ -1,6 +1,5 @@
 import { Transaction } from './types';
-import { CATEGORIES_MAP } from './constants';
-import { parseISODateLocal } from './utils-calc';
+import { CATEGORIES_MAP, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
 
 export interface PieChartData {
   category: string;
@@ -48,6 +47,7 @@ const CHART_COLORS = [
 
 /**
  * Get pie chart data for expenses by category
+ * Includes all expense categories, even those with 0 amount
  */
 export function getExpensePieChartData(
   transactions: Transaction[],
@@ -55,39 +55,48 @@ export function getExpensePieChartData(
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'expense';
   });
 
   const grouped: Record<string, { total: number; count: number }> = {};
   const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-  monthTransactions.forEach((t) => {
-    if (!grouped[t.category]) {
-      grouped[t.category] = { total: 0, count: 0 };
+  monthTransactions.filter((t) => t.category !== undefined).forEach((t) => {
+    const cat = t.category!;
+    if (!grouped[cat]) {
+      grouped[cat] = { total: 0, count: 0 };
     }
-    grouped[t.category].total += t.amount;
-    grouped[t.category].count += 1;
+    grouped[cat].total += t.amount;
+    grouped[cat].count += 1;
   });
 
-  return Object.entries(grouped)
-    .map(([category, data], index) => {
-      const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
-      return {
-        category,
-        label: categoryInfo?.label || category,
-        icon: categoryInfo?.icon || '📌',
-        amount: data.total,
-        percentage: total > 0 ? (data.total / total) * 100 : 0,
-        count: data.count,
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+  // Create entries for all expense categories (including those with 0 amount)
+  const allCategoryData = EXPENSE_CATEGORIES.map((cat, index) => {
+    const data = grouped[cat.id] || { total: 0, count: 0 };
+    return {
+      category: cat.id,
+      label: cat.label,
+      icon: cat.icon,
+      amount: data.total,
+      percentage: total > 0 ? (data.total / total) * 100 : 0,
+      count: data.count,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    };
+  });
+
+  // Sort by amount (descending), but keep zero-amount categories at the end
+  return allCategoryData.sort((a, b) => {
+    if (a.amount === 0 && b.amount === 0) return 0;
+    if (a.amount === 0) return 1;
+    if (b.amount === 0) return -1;
+    return b.amount - a.amount;
+  });
 }
 
 /**
  * Get pie chart data for income by category
+ * Includes all income categories, even those with 0 amount
  */
 export function getIncomePieChartData(
   transactions: Transaction[],
@@ -95,35 +104,43 @@ export function getIncomePieChartData(
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'income';
   });
 
   const grouped: Record<string, { total: number; count: number }> = {};
   const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
 
-  monthTransactions.forEach((t) => {
-    if (!grouped[t.category]) {
-      grouped[t.category] = { total: 0, count: 0 };
+  monthTransactions.filter((t) => t.category !== undefined).forEach((t) => {
+    const cat = t.category!;
+    if (!grouped[cat]) {
+      grouped[cat] = { total: 0, count: 0 };
     }
-    grouped[t.category].total += t.amount;
-    grouped[t.category].count += 1;
+    grouped[cat].total += t.amount;
+    grouped[cat].count += 1;
   });
 
-  return Object.entries(grouped)
-    .map(([category, data], index) => {
-      const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
-      return {
-        category,
-        label: categoryInfo?.label || category,
-        icon: categoryInfo?.icon || '📌',
-        amount: data.total,
-        percentage: total > 0 ? (data.total / total) * 100 : 0,
-        count: data.count,
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+  // Create entries for all income categories (including those with 0 amount)
+  const allCategoryData = INCOME_CATEGORIES.map((cat, index) => {
+    const data = grouped[cat.id] || { total: 0, count: 0 };
+    return {
+      category: cat.id,
+      label: cat.label,
+      icon: cat.icon,
+      amount: data.total,
+      percentage: total > 0 ? (data.total / total) * 100 : 0,
+      count: data.count,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    };
+  });
+
+  // Sort by amount (descending), but keep zero-amount categories at the end
+  return allCategoryData.sort((a, b) => {
+    if (a.amount === 0 && b.amount === 0) return 0;
+    if (a.amount === 0) return 1;
+    if (b.amount === 0) return -1;
+    return b.amount - a.amount;
+  });
 }
 
 /**
@@ -135,7 +152,7 @@ export function getDailyChartData(
   year: number
 ): DailyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
@@ -175,14 +192,14 @@ export function getWeeklyChartData(
   year: number
 ): WeeklyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
   const weeklyData: Record<number, WeeklyChartData> = {};
 
   monthTransactions.forEach((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     const weekNumber = Math.ceil((date.getDate()) / 7);
     const weekKey = weekNumber;
 
@@ -223,7 +240,7 @@ export function getMonthlyChartData(
   ];
 
   const yearTransactions = transactions.filter((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     return date.getFullYear() === year;
   });
 
@@ -242,7 +259,7 @@ export function getMonthlyChartData(
   }
 
   yearTransactions.forEach((t) => {
-    const date = parseISODateLocal(t.date);
+    const date = new Date(t.date);
     const monthIndex = date.getMonth();
 
     if (t.type === 'income') {

@@ -5,6 +5,7 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useUser } from '@/lib/user-context';
 import { PinVerificationModal } from '@/components/pin-verification-modal';
+import { BankConnectionSection } from '@/components/bank-connection-section';
 import { LANGUAGES, CURRENCIES, DATE_FORMATS } from '@/lib/constants';
 import { Language, Currency, DateFormat, Theme } from '@/lib/types';
 import * as FileSystem from 'expo-file-system/legacy';
@@ -18,7 +19,7 @@ import * as Application from 'expo-application';
 
 export default function SettingsScreen() {
   const { state, setLanguage, setCurrency, setDateFormat, setTheme, exportData, clearAllData, importTransactions, saveState } = useAppContext();
-  const { username, pin, verifyPin, updateUsername, updatePin, setPin } = useUser();
+  const { username, pin, verifyPin, updateUsername, updatePin } = useUser();
   const { t } = useI18n();
   const colors = useColors();
   
@@ -94,7 +95,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, jsonString);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), t('settings.sharing_unavailable'));
+            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
             return;
           }
 
@@ -106,7 +107,7 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('Export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
+        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
       }
     } else if (pendingAction === 'export_txt') {
       try {
@@ -133,13 +134,55 @@ export default function SettingsScreen() {
         
         if (exportDataWithUser.transactions && exportDataWithUser.transactions.length > 0) {
           exportDataWithUser.transactions.forEach((tx: any, idx: number) => {
-            const typeLabel = tx.type === 'income' ? t('transaction.income') : t('transaction.expense');
-            const categoryLabel = t(`categories.${tx.category}`) || tx.category;
+            // Determine transaction type label
+            let typeLabel = '';
+            if (tx.type === 'income') {
+              typeLabel = t('transaction.income');
+            } else if (tx.type === 'transfer') {
+              typeLabel = t('transaction.transfer');
+            } else if (tx.remainingInstallments !== undefined || tx.totalInstallments !== undefined) {
+              typeLabel = t('transaction.installment');
+            } else {
+              typeLabel = t('transaction.expense');
+            }
+            
+            // Determine category label
+            let categoryLabel = '';
+            if (tx.remainingInstallments !== undefined || tx.totalInstallments !== undefined) {
+              categoryLabel = t('categories.loan');
+            } else if (tx.type === 'transfer') {
+              categoryLabel = t('transaction.repayment');
+            } else {
+              categoryLabel = t(`categories.${tx.category}`) || tx.category;
+            }
+            
             const currency = state.settings.currency || 'EUR';
             const description = tx.description || tx.notes || '';
+            
+            // Get payment method label
+            let paymentMethodLabel = '';
+            if (tx.paymentMethod) {
+              paymentMethodLabel = t(`paymentMethods.${tx.paymentMethod}`) || tx.paymentMethod;
+            } else if (tx.type === 'transfer') {
+              // For transfers, show transfer from/to
+              if (tx.transferFrom) {
+                paymentMethodLabel = t(`paymentMethods.${tx.transferFrom}`) || tx.transferFrom;
+              } else if (tx.transferTo) {
+                paymentMethodLabel = t(`paymentMethods.${tx.transferTo}`) || tx.transferTo;
+              }
+            }
+            
             txtContent += `${idx + 1}. ${t('transaction.type')}: ${typeLabel}\n`;
             txtContent += `   ${t('transaction.category')}: ${categoryLabel}\n`;
             txtContent += `   ${t('transaction.description')}: ${description}\n`;
+            if (paymentMethodLabel) {
+              txtContent += `   ${t('transaction.paymentMethod')}: ${paymentMethodLabel}\n`;
+            }
+            if (tx.bank) {
+              txtContent += `   ${t('transaction.bank')}: ${tx.bank}\n`;
+            } else if (tx.installmentBank) {
+              txtContent += `   ${t('transaction.bank')}: ${tx.installmentBank}\n`;
+            }
             txtContent += `   ${t('transaction.amount')}: ${tx.amount} ${currency}\n`;
             txtContent += `   ${t('transaction.date')}: ${new Date(tx.date).toLocaleDateString()}\n\n`;
           });
@@ -167,7 +210,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, txtContent);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), t('settings.sharing_unavailable'));
+            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
             return;
           }
 
@@ -179,12 +222,12 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('TXT export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
+        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
       }
     } else if (pendingAction === 'import') {
       try {
         if (!selectedImportFile) {
-          Alert.alert(t('common.error'), t('settings.no_file_selected'));
+          Alert.alert(t('common.error'), 'No file selected');
           setPendingAction(null);
           return;
         }
@@ -212,7 +255,7 @@ export default function SettingsScreen() {
 
         // Verify it has transactions
         if (!importedData.transactions || !Array.isArray(importedData.transactions)) {
-          Alert.alert(t('common.error'), t('settings.invalid_backup_format'));
+          Alert.alert(t('common.error'), 'Invalid backup file format');
           setPendingAction(null);
           setSelectedImportFile(null);
           return;
@@ -220,7 +263,7 @@ export default function SettingsScreen() {
 
         // Import transactions
         console.log('Importing', importedData.transactions.length, 'transactions');
-        importTransactions(importedData.transactions);
+        importTransactions(importedData);
         
         // Save state to AsyncStorage after importing
         await saveState();
@@ -228,12 +271,12 @@ export default function SettingsScreen() {
 
         Alert.alert(
           t('common.success'),
-          `${t('settings.importSuccess')} (${importedData.transactions.length})`
+          `${importedData.transactions.length} transactions imported successfully`
         );
         setSelectedImportFile(null);
       } catch (error) {
         console.error('Import error:', error);
-        Alert.alert(t('common.error'), t('settings.import_failed'));
+        Alert.alert(t('common.error'), 'Failed to import data');
         setSelectedImportFile(null);
       }
     }
@@ -266,7 +309,7 @@ export default function SettingsScreen() {
       setImportingFile(false);
     } catch (error) {
       console.error('Import error:', error);
-      Alert.alert(t('common.error'), t('settings.file_select_failed'));
+      Alert.alert(t('common.error'), 'Failed to select file');
       setImportingFile(false);
     }
   };
@@ -348,7 +391,7 @@ export default function SettingsScreen() {
 
     try {
       console.log('Setting up initial PIN:', setupNewPin);
-      await setPin(setupNewPin);
+      await updatePin(setupNewPin);
       setSetupNewPin('');
       setSetupConfirmPin('');
       setShowSetupPinForm(false);
@@ -456,12 +499,12 @@ export default function SettingsScreen() {
                 className="bg-primary px-4 py-2 rounded-lg items-center"
                 onPress={() => setShowSetupPinForm(true)}
               >
-                <Text className="text-white font-semibold text-sm">{t('settings.set_pin')}</Text>
+                <Text className="text-white font-semibold text-sm">Set PIN</Text>
               </Pressable>
             </View>
           ) : showSetupPinForm ? (
             <View className="gap-3">
-              <Text className="text-base text-foreground font-semibold mb-2">{t('settings.set_initial_pin')}</Text>
+              <Text className="text-base text-foreground font-semibold mb-2">Set Initial PIN</Text>
               <View className="relative">
                 <TextInput
                   className="border border-border rounded-lg px-4 py-3 pr-12 text-foreground bg-background"
@@ -650,6 +693,9 @@ export default function SettingsScreen() {
             (code) => setTheme(code as Theme)
           )}
         </View>
+
+        {/* Bank Connections Section */}
+        <BankConnectionSection />
 
         {/* Data Management Section */}
         <View className="mb-6">

@@ -44,9 +44,11 @@ export function ThemeProvider({ children, themePreference = 'auto' }: ThemeProvi
   // Update colorScheme when themePreference changes
   useEffect(() => {
     const newScheme = themePreference === 'auto' ? systemScheme : (themePreference as ColorScheme);
-    setColorSchemeState(newScheme);
-    applyScheme(newScheme);
-  }, [themePreference, systemScheme, applyScheme]);
+    if (newScheme !== colorScheme) {
+      setColorSchemeState(newScheme);
+      applyScheme(newScheme);
+    }
+  }, [themePreference, systemScheme, applyScheme, colorScheme]);
 
   const themeVariables = useMemo(
     () =>

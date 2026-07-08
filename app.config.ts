@@ -54,18 +54,12 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  owner: "pritanis1975",
   version: "1.0.0",
-  orientation: "portrait",
+  orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
-  extra: {
-    eas: {
-      projectId: "c527fdde-09e1-4fd8-b027-3617d6bc39f3",
-    },
-  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
@@ -107,6 +101,7 @@ const config: ExpoConfig = {
     favicon: "./assets/images/favicon.webp",
   },
   plugins: [
+    "expo-font",
     "expo-router",
     [
       "expo-audio",
