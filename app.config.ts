@@ -61,6 +61,18 @@ const config: ExpoConfig = {
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
+  // "sdkVersion" (not "appVersion") because this project bumps the JS-visible
+  // "version" field on nearly every fix — tying runtimeVersion to appVersion
+  // would mean every version bump also breaks OTA compatibility with the
+  // currently-installed native build, defeating the point of EAS Update.
+  // sdkVersion only changes when the Expo SDK itself is upgraded, so pure-JS
+  // fixes stay OTA-compatible across normal version bumps.
+  runtimeVersion: {
+    policy: "sdkVersion",
+  },
+  updates: {
+    url: "https://u.expo.dev/c527fdde-09e1-4fd8-b027-3617d6bc39f3",
+  },
   extra: {
     eas: {
       projectId: "c527fdde-09e1-4fd8-b027-3617d6bc39f3",
@@ -110,6 +122,7 @@ const config: ExpoConfig = {
     "expo-font",
     "expo-router",
     "expo-dev-client",
+    "expo-updates",
     [
       "expo-audio",
       {
