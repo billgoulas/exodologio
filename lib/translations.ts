@@ -2713,7 +2713,7 @@ export const translations: Translations = {
       toll_card: 'Карта за такси',
       iris: 'Iris',
       gift_card: 'Карта за подарък',
-        cash: 'Брой',
+      cash: 'Брой',
       bank_transfer: 'Банков сметка',
       investment_account: 'Инвестиционна сметка',
       rewards: 'Точки за награди',
@@ -2724,25 +2724,51 @@ export const translations: Translations = {
 // Bank connection strings previously existed only in Greek inline above;
 // lib/translations/bank.ts has the full 9-language set, so merge it into
 // `settings` for every language instead of hand-duplicating it here.
-const NOT_FOUND_TRANSLATIONS: Record<Language, { transaction: string; installment: string; editTitle: string }> = {
-  el: { transaction: 'Η συναλλαγή δεν βρέθηκε', installment: 'Η δόση δεν βρέθηκε', editTitle: 'Επεξεργασία Δόσης' },
-  en: { transaction: 'Transaction not found', installment: 'Installment not found', editTitle: 'Edit Installment' },
-  fr: { transaction: 'Transaction introuvable', installment: 'Acompte introuvable', editTitle: 'Modifier l’acompte' },
-  de: { transaction: 'Transaktion nicht gefunden', installment: 'Rate nicht gefunden', editTitle: 'Rate bearbeiten' },
-  it: { transaction: 'Transazione non trovata', installment: 'Rata non trovata', editTitle: 'Modifica rata' },
-  es: { transaction: 'Transacción no encontrada', installment: 'Cuota no encontrada', editTitle: 'Editar cuota' },
-  ru: { transaction: 'Транзакция не найдена', installment: 'Рассрочка не найдена', editTitle: 'Редактировать рассрочку' },
-  sq: { transaction: 'Transaksioni nuk u gjet', installment: 'Këst nuk u gjet', editTitle: 'Redakto këstin' },
-  bg: { transaction: 'Транзакцията не е намерена', installment: 'Вноската не е намерена', editTitle: 'Редактиране на вноска' },
+const NOT_FOUND_TRANSLATIONS: Record<Language, { transaction: string; installment: string; editTitle: string; countExceedsTotal: string }> = {
+  el: { transaction: 'Η συναλλαγή δεν βρέθηκε', installment: 'Η δόση δεν βρέθηκε', editTitle: 'Επεξεργασία Δόσης', countExceedsTotal: 'Οι υπόλοιπες δόσεις δεν μπορούν να είναι περισσότερες από τις συνολικές' },
+  en: { transaction: 'Transaction not found', installment: 'Installment not found', editTitle: 'Edit Installment', countExceedsTotal: 'Remaining installments cannot exceed total installments' },
+  fr: { transaction: 'Transaction introuvable', installment: 'Acompte introuvable', editTitle: 'Modifier l’acompte', countExceedsTotal: 'Le nombre d’acomptes restants ne peut pas dépasser le total' },
+  de: { transaction: 'Transaktion nicht gefunden', installment: 'Rate nicht gefunden', editTitle: 'Rate bearbeiten', countExceedsTotal: 'Verbleibende Raten dürfen die Gesamtzahl nicht überschreiten' },
+  it: { transaction: 'Transazione non trovata', installment: 'Rata non trovata', editTitle: 'Modifica rata', countExceedsTotal: 'Le rate rimanenti non possono superare il totale' },
+  es: { transaction: 'Transacción no encontrada', installment: 'Cuota no encontrada', editTitle: 'Editar cuota', countExceedsTotal: 'Las cuotas restantes no pueden superar el total' },
+  ru: { transaction: 'Транзакция не найдена', installment: 'Рассрочка не найдена', editTitle: 'Редактировать рассрочку', countExceedsTotal: 'Оставшиеся платежи не могут превышать общее количество' },
+  sq: { transaction: 'Transaksioni nuk u gjet', installment: 'Këst nuk u gjet', editTitle: 'Redakto këstin', countExceedsTotal: 'Këstet e mbetura nuk mund të kalojnë numrin total' },
+  bg: { transaction: 'Транзакцията не е намерена', installment: 'Вноската не е намерена', editTitle: 'Редактиране на вноска', countExceedsTotal: 'Оставащите вноски не могат да надвишават общия брой' },
+};
+
+// Settings-screen strings that were previously hardcoded in English
+// regardless of the selected language.
+const SETTINGS_STRINGS: Record<Language, {
+  sharingNotAvailable: string;
+  noFileSelected: string;
+  invalidBackupFormat: string;
+  transactionsImportedSuccessfully: string;
+  importFailed: string;
+  selectFileFailed: string;
+  pinNotSet: string;
+  setPin: string;
+  setInitialPin: string;
+}> = {
+  el: { sharingNotAvailable: 'Η κοινή χρήση δεν είναι διαθέσιμη σε αυτή τη συσκευή.', noFileSelected: 'Δεν επιλέχθηκε αρχείο', invalidBackupFormat: 'Μη έγκυρη μορφή αρχείου αντιγράφου ασφαλείας', transactionsImportedSuccessfully: 'συναλλαγές εισήχθησαν με επιτυχία', importFailed: 'Η εισαγωγή απέτυχε', selectFileFailed: 'Αποτυχία επιλογής αρχείου', pinNotSet: 'Δεν έχει οριστεί', setPin: 'Ορισμός PIN', setInitialPin: 'Ορισμός Αρχικού PIN' },
+  en: { sharingNotAvailable: 'Sharing is not available on this device.', noFileSelected: 'No file selected', invalidBackupFormat: 'Invalid backup file format', transactionsImportedSuccessfully: 'transactions imported successfully', importFailed: 'Failed to import data', selectFileFailed: 'Failed to select file', pinNotSet: 'Not Set', setPin: 'Set PIN', setInitialPin: 'Set Initial PIN' },
+  fr: { sharingNotAvailable: 'Le partage n’est pas disponible sur cet appareil.', noFileSelected: 'Aucun fichier sélectionné', invalidBackupFormat: 'Format de fichier de sauvegarde invalide', transactionsImportedSuccessfully: 'transactions importées avec succès', importFailed: 'Échec de l’importation', selectFileFailed: 'Échec de la sélection du fichier', pinNotSet: 'Non défini', setPin: 'Définir le code PIN', setInitialPin: 'Définir le code PIN initial' },
+  de: { sharingNotAvailable: 'Teilen ist auf diesem Gerät nicht verfügbar.', noFileSelected: 'Keine Datei ausgewählt', invalidBackupFormat: 'Ungültiges Sicherungsdateiformat', transactionsImportedSuccessfully: 'Transaktionen erfolgreich importiert', importFailed: 'Import fehlgeschlagen', selectFileFailed: 'Dateiauswahl fehlgeschlagen', pinNotSet: 'Nicht festgelegt', setPin: 'PIN festlegen', setInitialPin: 'Anfängliche PIN festlegen' },
+  it: { sharingNotAvailable: 'La condivisione non è disponibile su questo dispositivo.', noFileSelected: 'Nessun file selezionato', invalidBackupFormat: 'Formato del file di backup non valido', transactionsImportedSuccessfully: 'transazioni importate con successo', importFailed: 'Importazione non riuscita', selectFileFailed: 'Selezione del file non riuscita', pinNotSet: 'Non impostato', setPin: 'Imposta PIN', setInitialPin: 'Imposta PIN iniziale' },
+  es: { sharingNotAvailable: 'Compartir no está disponible en este dispositivo.', noFileSelected: 'Ningún archivo seleccionado', invalidBackupFormat: 'Formato de archivo de copia de seguridad no válido', transactionsImportedSuccessfully: 'transacciones importadas con éxito', importFailed: 'Error al importar', selectFileFailed: 'Error al seleccionar el archivo', pinNotSet: 'No establecido', setPin: 'Establecer PIN', setInitialPin: 'Establecer PIN inicial' },
+  ru: { sharingNotAvailable: 'Общий доступ недоступен на этом устройстве.', noFileSelected: 'Файл не выбран', invalidBackupFormat: 'Неверный формат файла резервной копии', transactionsImportedSuccessfully: 'транзакций успешно импортировано', importFailed: 'Не удалось импортировать данные', selectFileFailed: 'Не удалось выбрать файл', pinNotSet: 'Не установлен', setPin: 'Установить PIN', setInitialPin: 'Установить начальный PIN' },
+  sq: { sharingNotAvailable: 'Ndarja nuk është e disponueshme në këtë pajisje.', noFileSelected: 'Nuk u zgjodh asnjë skedar', invalidBackupFormat: 'Format i pavlefshëm i skedarit të rezervës', transactionsImportedSuccessfully: 'transaksione u importuan me sukses', importFailed: 'Importimi dështoi', selectFileFailed: 'Zgjedhja e skedarit dështoi', pinNotSet: 'Nuk është caktuar', setPin: 'Cakto PIN', setInitialPin: 'Cakto PIN fillestar' },
+  bg: { sharingNotAvailable: 'Споделянето не е налично на това устройство.', noFileSelected: 'Не е избран файл', invalidBackupFormat: 'Невалиден формат на резервния файл', transactionsImportedSuccessfully: 'транзакции бяха импортирани успешно', importFailed: 'Импортирането е неуспешно', selectFileFailed: 'Изборът на файл е неуспешен', pinNotSet: 'Не е зададен', setPin: 'Задаване на PIN', setInitialPin: 'Задаване на начален PIN' },
 };
 
 (Object.keys(translations) as Language[]).forEach((lang) => {
   Object.assign(translations[lang].settings, bankTranslations[lang] || bankTranslations.en);
+  Object.assign(translations[lang].settings, SETTINGS_STRINGS[lang] || SETTINGS_STRINGS.en);
 
   const notFound = NOT_FOUND_TRANSLATIONS[lang] || NOT_FOUND_TRANSLATIONS.en;
   (translations[lang].transaction as Record<string, string>).notFound = notFound.transaction;
   (translations[lang].installment as Record<string, string>).notFound = notFound.installment;
   (translations[lang].installment as Record<string, string>).editTitle = notFound.editTitle;
+  (translations[lang].installment as Record<string, string>).countExceedsTotal = notFound.countExceedsTotal;
 
   // The expense-side "investment"/"gift" categories were renamed to
   // investment_expense/gift_expense (see lib/constants.ts) so their ids no

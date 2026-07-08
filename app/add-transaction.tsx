@@ -11,7 +11,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
-import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString, toLocalDateString } from '@/lib/utils-calc';
 
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -51,7 +51,6 @@ export default function AddTransactionScreen() {
     remainingInstallments?: string;
     totalInstallments?: string;
   }>();
-  const isDuplicate = params.duplicate === '1';
   const { addTransaction, state } = useAppContext();
   const { t, language } = useI18n();
 
@@ -79,7 +78,7 @@ export default function AddTransactionScreen() {
   const initCategory = params.category ||
     (initType === 'income' ? INCOME_CATEGORIES[0].id : EXPENSE_CATEGORIES[0].id);
   const initPaymentMethod = (params.paymentMethod as PaymentMethod) || 'credit_card';
-  const initDate = params.date || new Date().toISOString().split('T')[0];
+  const initDate = params.date || toLocalDateString(new Date());
   const initNotes = params.notes || '';
   const initTransferFrom = (params.transferFrom as PaymentMethod) || 'bank_transfer';
   const initTransferTo = (params.transferTo as PaymentMethod) || 'credit_card';
@@ -184,7 +183,7 @@ export default function AddTransactionScreen() {
     const standardAmount = amount.replace(decimalSeparator, '.');
 
     if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('transaction.invalidAmount', 'Please enter a valid amount'));
       return;
     }
 
@@ -235,17 +234,22 @@ export default function AddTransactionScreen() {
     const standardAmount = installmentAmount.replace(decimalSeparator, '.');
 
     if (!installmentAmount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('installment.invalidAmount', 'Please enter a valid amount'));
       return;
     }
 
     if (!installmentCount || parseInt(installmentCount) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidCount') || 'Please enter a valid count');
+      Alert.alert(t('common.error'), t('installment.invalidCount', 'Please enter a valid count'));
       return;
     }
 
-    const remainingCount = parseInt(installmentCount) || 1;
-    const totalCount = parseInt(installmentTotalCount) || 1;
+    if (parseInt(installmentCount) > parseInt(installmentTotalCount || installmentCount)) {
+      Alert.alert(t('common.error'), t('installment.countExceedsTotal', 'Remaining installments cannot exceed total installments'));
+      return;
+    }
+
+    const remainingCount = parseInt(installmentCount);
+    const totalCount = parseInt(installmentTotalCount || installmentCount);
     const currentDate = parseLocalDateString(installmentDate);
     const installmentId = generateId();
 
@@ -533,7 +537,7 @@ export default function AddTransactionScreen() {
             <TextInput
               value={bank}
               onChangeText={setBank}
-              placeholder={t('transaction.bankPlaceholder') || 'Bank name'}
+              placeholder={t('transaction.bankPlaceholder', 'Bank name')}
               className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
               placeholderTextColor="#687076"
             />
@@ -571,7 +575,7 @@ export default function AddTransactionScreen() {
               <TextInput
                 value={installmentBank}
                 onChangeText={setInstallmentBank}
-                placeholder={t('installment.bankPlaceholder') || 'Enter bank name'}
+                placeholder={t('installment.bankPlaceholder', 'Enter bank name')}
                 className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
                 placeholderTextColor="#687076"
               />
@@ -865,7 +869,10 @@ export default function AddTransactionScreen() {
               onDateChange={setPickerDate}
               mode="date"
               locale={datePickerLocale}
-              {...({ textColor: colors.foreground } as any)}
+              {...({
+                textColor: colors.foreground,
+                backgroundColor: effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF',
+              } as any)}
             />
             <View className="flex-row gap-3 mt-4">
               <Pressable
@@ -916,7 +923,10 @@ export default function AddTransactionScreen() {
               onDateChange={setInstallmentPickerDate}
               mode="date"
               locale={datePickerLocale}
-              {...({ textColor: colors.foreground } as any)}
+              {...({
+                textColor: colors.foreground,
+                backgroundColor: effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF',
+              } as any)}
             />
             <View className="flex-row gap-3 mt-4">
               <Pressable

@@ -72,7 +72,7 @@ export default function EditInstallmentScreen() {
         setOriginalCreatedAt(summary.nextPaymentDate);
         setPickerDate(parseLocalDateString(summary.nextPaymentDate));
       } else {
-        Alert.alert(t('common.error'), t('installment.notFound') || 'Installment not found');
+        Alert.alert(t('common.error'), t('installment.notFound', 'Installment not found'));
         router.back();
       }
     }
@@ -110,12 +110,17 @@ export default function EditInstallmentScreen() {
     const standardAmount = amount.replace(decimalSeparator, '.');
 
     if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('installment.invalidAmount', 'Please enter a valid amount'));
       return;
     }
 
     if (!count || Number.isNaN(parseInt(count)) || parseInt(count) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidCount') || 'Please enter a valid count');
+      Alert.alert(t('common.error'), t('installment.invalidCount', 'Please enter a valid count'));
+      return;
+    }
+
+    if (parseInt(count) > parseInt(totalCount || count)) {
+      Alert.alert(t('common.error'), t('installment.countExceedsTotal', 'Remaining installments cannot exceed total installments'));
       return;
     }
 
@@ -175,7 +180,7 @@ export default function EditInstallmentScreen() {
   };
 
   const handleDelete = () => {
-    const confirmMessage = t('installment.deleteConfirm') || 'Are you sure you want to delete this payment?';
+    const confirmMessage = t('installment.deleteConfirm', 'Are you sure you want to delete this payment?');
 
     const deleteAllInstallmentTransactions = () => {
       if (!id) return;
@@ -221,7 +226,7 @@ export default function EditInstallmentScreen() {
         {/* Header */}
         <View className="flex-row items-center justify-between mb-4">
           <Text className="text-2xl font-bold text-foreground">
-            {t('installment.editTitle') || 'Επεξεργασία Δόσης'}
+            {t('installment.editTitle', 'Επεξεργασία Δόσης')}
           </Text>
           <Pressable
             onPress={() => router.back()}
@@ -311,7 +316,7 @@ export default function EditInstallmentScreen() {
           <TextInput
             value={bank}
             onChangeText={setBank}
-            placeholder={t('installment.bankPlaceholder') || 'Enter bank name'}
+            placeholder={t('installment.bankPlaceholder', 'Enter bank name')}
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
             placeholderTextColor="#687076"
           />

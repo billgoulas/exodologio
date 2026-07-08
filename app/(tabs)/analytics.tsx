@@ -206,6 +206,11 @@ export default function AnalyticsScreen() {
   };
 
   const handleFilterButtonPress = (filter: DateRangeFilter) => {
+    // A quick filter must override any active custom date range, otherwise
+    // getDateRange() keeps using the custom range and the chip highlights
+    // without the data ever changing.
+    setCustomFromDate(null);
+    setCustomToDate(null);
     // Toggle behavior: if already selected, deselect (set to null)
     if (dateRangeFilter === filter) {
       setDateRangeFilter(null);
@@ -215,15 +220,15 @@ export default function AnalyticsScreen() {
   };
 
   const rangeOptions: RangeOption[] = [
-    { value: 'day', label: t('home.oneDay') || '1 Μέρα' },
-    { value: 'twodays', label: t('home.twoDays') || '2 Μέρες' },
-    { value: 'threedays', label: t('home.threeDays') || '3 Μέρες' },
-    { value: 'week', label: t('home.sevenDays') || '7 Μέρες' },
-    { value: 'twoweeks', label: t('home.fifteenDays') || '15 Μέρες' },
-    { value: 'month', label: t('home.oneMonth') || 'Μήνας' },
-    { value: '3months', label: t('home.threeMonths') || '3 Μήνες' },
-    { value: '6months', label: t('home.sixMonths') || '6 Μήνες' },
-    { value: 'year', label: t('home.oneYear') || '1 Χρόνος' },
+    { value: 'day', label: t('home.oneDay', '1 Μέρα') },
+    { value: 'twodays', label: t('home.twoDays', '2 Μέρες') },
+    { value: 'threedays', label: t('home.threeDays', '3 Μέρες') },
+    { value: 'week', label: t('home.sevenDays', '7 Μέρες') },
+    { value: 'twoweeks', label: t('home.fifteenDays', '15 Μέρες') },
+    { value: 'month', label: t('home.oneMonth', 'Μήνας') },
+    { value: '3months', label: t('home.threeMonths', '3 Μήνες') },
+    { value: '6months', label: t('home.sixMonths', '6 Μήνες') },
+    { value: 'year', label: t('home.oneYear', '1 Χρόνος') },
   ];
 
   const monthName = getMonthName(currentMonth.month, language);
@@ -377,7 +382,7 @@ export default function AnalyticsScreen() {
             }]}
           >
             <Text className="text-center text-white font-bold text-base">
-              {t('analytics.charts') || 'Διαγράμματα'}
+              {t('analytics.charts', 'Διαγράμματα')}
             </Text>
           </Pressable>
         </View>

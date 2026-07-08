@@ -75,11 +75,6 @@ export function buildInstallmentSummaries(transactions: Transaction[]): Installm
       return parseLocalDateString(a.date).getTime() - parseLocalDateString(b.date).getTime();
     });
 
-    // Sort by date descending (most recent first)
-    const sortedDesc = [...txs].sort((a, b) => {
-      return parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime();
-    });
-
     const firstTx = sortedAsc[0];   // First transaction (closest to today, next payment)
     const lastTx = sortedAsc[sortedAsc.length - 1]; // Last transaction (final payment date)
 

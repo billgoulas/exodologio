@@ -75,7 +75,7 @@ export default function ChartsViewScreen() {
               }]}
             >
               <Text className="text-primary font-semibold text-base">
-                {t('common.back') || '← Πίσω'}
+                {t('common.back', '← Πίσω')}
               </Text>
             </Pressable>
             <Text className="text-lg font-bold text-foreground flex-1 text-center">
@@ -152,11 +152,11 @@ export default function ChartsViewScreen() {
           }]}
         >
           <Text className="text-primary font-semibold text-base">
-            {t('common.back') || '← Πίσω'}
+            {t('common.back', '← Πίσω')}
           </Text>
         </Pressable>
         <Text className="text-lg font-bold text-foreground">
-          {t('analytics.charts') || 'Διαγράμματα'}
+          {t('analytics.charts', 'Διαγράμματα')}
         </Text>
         <View style={{ width: 60 }} />
       </View>
@@ -175,7 +175,7 @@ export default function ChartsViewScreen() {
             }]}
           >
             <Text className="text-white font-semibold text-base">
-              📊 {t('analytics.expenseByCategory') || 'Έξοδα ανά Κατηγορία'}
+              📊 {t('analytics.expenseByCategory', 'Έξοδα ανά Κατηγορία')}
             </Text>
           </Pressable>
 
@@ -191,7 +191,7 @@ export default function ChartsViewScreen() {
             }]}
           >
             <Text className="text-white font-semibold text-base">
-              📊 {t('analytics.incomeByCategory') || 'Έσοδα ανά Κατηγορία'}
+              📊 {t('analytics.incomeByCategory', 'Έσοδα ανά Κατηγορία')}
             </Text>
           </Pressable>
 
@@ -207,7 +207,7 @@ export default function ChartsViewScreen() {
             }]}
           >
             <Text className="text-white font-semibold text-base">
-              📉 {t('analytics.monthlyComparison') || 'Έξοδα vs Έσοδα ανά Μήνα'}
+              📉 {t('analytics.monthlyComparison', 'Έξοδα vs Έσοδα ανά Μήνα')}
             </Text>
           </Pressable>
 
@@ -223,7 +223,7 @@ export default function ChartsViewScreen() {
             }]}
           >
             <Text className="text-white font-semibold text-base">
-              📉 {t('analytics.installmentsByMonth') || 'Δόσεις ανά Μήνα'}
+              📉 {t('analytics.installmentsByMonth', 'Δόσεις ανά Μήνα')}
             </Text>
           </Pressable>
 
@@ -239,7 +239,7 @@ export default function ChartsViewScreen() {
             }]}
           >
             <Text className="text-white font-semibold text-base">
-              📈 {t('analytics.expenseTrend') || 'Τάση Εξόδων'}
+              📈 {t('analytics.expenseTrend', 'Τάση Εξόδων')}
             </Text>
           </Pressable>
         </View>

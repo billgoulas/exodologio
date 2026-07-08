@@ -64,9 +64,14 @@ export function TransactionItem({
   const amountColor = isInstallment ? '#FBBF24' : isTransfer ? '#8B5CF6' : isIncome ? '#22C55E' : '#EF4444';
   const amountSign = isIncome ? '+' : isTransfer ? '↔' : isInstallment ? '' : '-';
 
-  // Icon for transfer
+  // Icon: transfers and installments aren't in CATEGORIES_MAP (their
+  // category is the literal string 'installment', not a real category
+  // entry), so they need their own icon instead of falling through to the
+  // generic 📌 placeholder.
   const displayIcon = isTransfer
     ? '🔄'
+    : isInstallment
+    ? '🧾'
     : categoryInfo?.icon || '📌';
 
   // Label for transfer

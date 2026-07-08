@@ -3,7 +3,7 @@
  * Handles all database operations for Open Banking integration
  */
 
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, lt } from "drizzle-orm";
 import { getDb } from "./db";
 import { encryptSecret, decryptSecret } from "./_core/crypto";
 import {
@@ -376,17 +376,23 @@ export async function cleanupExpiredOAuthStates(): Promise<number> {
   }
 
   try {
-    await db
-      .delete(bankOAuthState)
-      .where(
-        and(
-          eq(bankOAuthState.isUsed, false),
-          // Expired states (older than 1 hour)
-          // Note: This is a simplified version; adjust based on your needs
-        )
-      );
+    const expiredCondition = and(
+      eq(bankOAuthState.isUsed, false),
+      lt(bankOAuthState.expiresAt, new Date())
+    );
 
-    return 0; // Simplified: return 0 for now
+    const expired = await db
+      .select({ id: bankOAuthState.id })
+      .from(bankOAuthState)
+      .where(expiredCondition);
+
+    if (expired.length === 0) {
+      return 0;
+    }
+
+    await db.delete(bankOAuthState).where(expiredCondition);
+
+    return expired.length;
   } catch (error) {
     console.error("[Database] Failed to cleanup OAuth states:", error);
     throw error;

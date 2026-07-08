@@ -145,13 +145,18 @@ export function getMonthSummary(
  * @param language - The language code to determine locale (el, en, fr, etc.)
  * @returns Formatted currency string with correct separators for the locale
  */
+// Currencies that don't use subunits (e.g. JPY has no fractional yen) —
+// forcing 2 decimals on these reads as wrong to native users.
+const ZERO_DECIMAL_CURRENCIES: Currency[] = ['JPY'];
+
 export function formatCurrency(amount: number, currency: Currency, language: Language = 'el'): string {
   const locale = LANGUAGE_TO_LOCALE[language] || 'el-GR';
+  const decimals = ZERO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
   const formatter = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
   return formatter.format(amount);
 }
@@ -270,27 +275,6 @@ export function getPreviousMonth(month: number, year: number): { month: number; 
     return { month: 12, year: year - 1 };
   }
   return { month: month - 1, year };
-}
-
-/**
- * Get month name in Greek
- */
-export function getMonthNameGreek(month: number): string {
-  const months = [
-    'Ιανουάριος',
-    'Φεβρουάριος',
-    'Μάρτιος',
-    'Απρίλιος',
-    'Μάιος',
-    'Ιούνιος',
-    'Ιούλιος',
-    'Αύγουστος',
-    'Σεπτέμβριος',
-    'Οκτώβριος',
-    'Νοέμβριος',
-    'Δεκέμβριος',
-  ];
-  return months[month - 1] || '';
 }
 
 /**

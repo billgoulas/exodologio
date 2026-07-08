@@ -11,7 +11,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
-import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString, toLocalDateString } from '@/lib/utils-calc';
 
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -57,7 +57,7 @@ export default function EditTransactionScreen() {
   const initAmount = '';
   const initCategory = EXPENSE_CATEGORIES[0].id;
   const initPaymentMethod: PaymentMethod = 'credit_card';
-  const initDate = new Date().toISOString().split('T')[0];
+  const initDate = toLocalDateString(new Date());
   const initNotes = '';
   const initTransferFrom: PaymentMethod = 'bank_transfer';
   const initTransferTo: PaymentMethod = 'credit_card';
@@ -134,7 +134,7 @@ export default function EditTransactionScreen() {
           setPaymentMethod(transaction.paymentMethod || 'credit_card');
         }
       } else {
-        Alert.alert(t('common.error'), t('transaction.notFound') || 'Transaction not found');
+        Alert.alert(t('common.error'), t('transaction.notFound', 'Transaction not found'));
         router.back();
         return;
       }
@@ -210,7 +210,7 @@ export default function EditTransactionScreen() {
     const standardAmount = amount.replace(decimalSeparator, '.');
 
     if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('transaction.invalidAmount', 'Please enter a valid amount'));
       return;
     }
 
@@ -256,7 +256,7 @@ export default function EditTransactionScreen() {
   };
 
   const handleDelete = () => {
-    const confirmMessage = t('transaction.deleteConfirm') || 'Are you sure you want to delete this transaction?';
+    const confirmMessage = t('transaction.deleteConfirm', 'Are you sure you want to delete this transaction?');
     
     if (typeof window !== 'undefined' && window.confirm) {
       if (window.confirm(confirmMessage)) {
@@ -292,12 +292,17 @@ export default function EditTransactionScreen() {
     const standardAmount = installmentAmount.replace(decimalSeparator, '.');
 
     if (!installmentAmount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
+      Alert.alert(t('common.error'), t('installment.invalidAmount', 'Please enter a valid amount'));
       return;
     }
 
     if (!installmentCount || parseInt(installmentCount) <= 0) {
-      Alert.alert(t('common.error'), t('installment.invalidCount') || 'Please enter a valid count');
+      Alert.alert(t('common.error'), t('installment.invalidCount', 'Please enter a valid count'));
+      return;
+    }
+
+    if (parseInt(installmentCount) > parseInt(installmentTotalCount || installmentCount)) {
+      Alert.alert(t('common.error'), t('installment.countExceedsTotal', 'Remaining installments cannot exceed total installments'));
       return;
     }
 
@@ -618,7 +623,7 @@ export default function EditTransactionScreen() {
             <TextInput
               value={bank}
               onChangeText={setBank}
-              placeholder={t('transaction.bankPlaceholder') || 'Bank name'}
+              placeholder={t('transaction.bankPlaceholder', 'Bank name')}
               className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
               placeholderTextColor="#687076"
             />
@@ -656,7 +661,7 @@ export default function EditTransactionScreen() {
               <TextInput
                 value={installmentBank}
                 onChangeText={setInstallmentBank}
-                placeholder={t('installment.bankPlaceholder') || 'Enter bank name'}
+                placeholder={t('installment.bankPlaceholder', 'Enter bank name')}
                 className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
                 placeholderTextColor="#687076"
               />
