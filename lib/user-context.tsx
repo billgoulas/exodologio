@@ -103,7 +103,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
     const hashedInput = await hashPin(inputPin);
-    return pin === hashedInput;
+    if (pin === hashedInput) {
+      return true;
+    }
+    // Installs updated from a version that stored the PIN as plaintext still
+    // have the raw value here. Accept it once, then upgrade storage to the
+    // hash so every verification after this one goes through the safe path.
+    if (pin === inputPin) {
+      await AsyncStorage.setItem('user_pin', hashedInput);
+      setPinState(hashedInput);
+      return true;
+    }
+    return false;
   };
 
   return (
