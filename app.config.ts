@@ -29,7 +29,7 @@ const schemeFromBundleId = `manus${timestamp}`;
 const env = {
   // App branding - update these values directly (do not use env vars)
   appName: "Πορτοφόλι",
-  appSlug: "exodologio-v2",
+  appSlug: "exodologio",
   // Localized app names for different languages
   localizedAppNames: {
     el: "Πορτοφόλι",
