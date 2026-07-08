@@ -50,7 +50,7 @@ export default function InstallmentsScreen() {
               <View className="items-end">
                 <Text className="text-xs text-muted">{t('installment.totalRemainingAmount')}</Text>
                 <Text className="text-lg font-semibold text-primary">
-                  {formatCurrency(totals.totalRemainingAmount, state.settings.currency, language as any)}
+                  {formatCurrency(totals.totalRemainingAmount, state.settings.currency, language)}
                 </Text>
               </View>
             </View>

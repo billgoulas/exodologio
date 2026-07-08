@@ -1,5 +1,5 @@
 import { View, Text, Pressable } from 'react-native';
-import { Transaction, Currency, Language } from '@/lib/types';
+import { Transaction, Currency, Language, PaymentMethod } from '@/lib/types';
 import { CATEGORIES_MAP, PAYMENT_METHODS_MAP, INSTALLMENT_PAYMENT_METHODS_MAP } from '@/lib/constants';
 import { formatNumber, formatDate } from '@/lib/utils-calc';
 import { DateFormat } from '@/lib/types';
@@ -54,7 +54,7 @@ export function TransactionItem({
   
   const paymentMethodInfo = isInstallment && transaction.installmentPaymentMethod
     ? INSTALLMENT_PAYMENT_METHODS_MAP[transaction.installmentPaymentMethod]
-    : (displayPaymentMethod && displayPaymentMethod !== 'standing_order') ? (PAYMENT_METHODS_MAP as any)[displayPaymentMethod] : null;
+    : (displayPaymentMethod && displayPaymentMethod !== 'standing_order') ? PAYMENT_METHODS_MAP[displayPaymentMethod as PaymentMethod] : null;
   
   const paymentMethodLabel = paymentMethodInfo
     ? t(`paymentMethods.${displayPaymentMethod}`, paymentMethodInfo.label)

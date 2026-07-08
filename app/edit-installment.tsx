@@ -18,8 +18,7 @@ const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export default function EditInstallmentScreen() {
   const router = useRouter();
-  const { id, readOnly } = useLocalSearchParams<{ id: string; readOnly?: string }>();
-  const isReadOnly = readOnly === 'true';
+  const { id } = useLocalSearchParams<{ id: string }>();
   const { state, addTransaction, deleteTransaction } = useAppContext();
   const { t, language } = useI18n();
   const colors = useColors();
@@ -400,7 +399,7 @@ export default function EditInstallmentScreen() {
           <Pressable
             onPress={handleSave}
             style={({ pressed }) => [{
-              flex: isReadOnly ? 1 : 1,
+              flex: 1,
               opacity: pressed ? 0.8 : 1,
               backgroundColor: '#0A7EA4',
               paddingVertical: 16,

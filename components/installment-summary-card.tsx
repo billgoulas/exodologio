@@ -1,13 +1,13 @@
 import { View, Text } from 'react-native';
 import { InstallmentPlanSummary } from '@/lib/rebuild-installments';
 import { formatCurrency, formatDate } from '@/lib/utils-calc';
-import { DateFormat, Currency } from '@/lib/types';
+import { DateFormat, Currency, Language } from '@/lib/types';
 
 interface InstallmentSummaryCardProps {
   summary: InstallmentPlanSummary;
   currency: Currency;
   dateFormat: DateFormat;
-  language: string;
+  language: Language;
   t?: (key: string) => string;
 }
 
@@ -20,8 +20,8 @@ export function InstallmentSummaryCard({
 }: InstallmentSummaryCardProps) {
   // Default translation function if not provided
   const translate = t || ((key: string) => key);
-  const formattedInstallmentAmount = formatCurrency(summary.installmentAmount, currency, language as any);
-  const formattedRemainingAmount = formatCurrency(summary.totalRemainingAmount, currency, language as any);
+  const formattedInstallmentAmount = formatCurrency(summary.installmentAmount, currency, language);
+  const formattedRemainingAmount = formatCurrency(summary.totalRemainingAmount, currency, language);
   const displayNextPaymentDate = formatDate(summary.nextPaymentDate, dateFormat);
   const displayLastPaymentDate = summary.lastPaymentDate ? formatDate(summary.lastPaymentDate, dateFormat) : null;
 

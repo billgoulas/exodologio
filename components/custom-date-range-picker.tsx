@@ -35,10 +35,6 @@ export function CustomDateRangePicker({
     setShowToPicker(false);
   };
 
-  const handleApply = () => {
-    onDateRangeChange(tempFromDate, tempToDate);
-  };
-
   const handleClear = () => {
     onDateRangeChange(null, null);
   };

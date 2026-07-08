@@ -20,6 +20,22 @@ function hashPin(pin: string): Promise<string> {
   return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
 }
 
+/**
+ * Compare two strings without short-circuiting on the first differing
+ * character, so a failed PIN attempt takes the same time regardless of how
+ * many leading characters matched (plain `===` leaks that via timing).
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) {
+    return false;
+  }
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
+
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsernameState] = useState<string | null>(null);
   const [pin, setPinState] = useState<string | null>(null);
@@ -103,13 +119,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       return false;
     }
     const hashedInput = await hashPin(inputPin);
-    if (pin === hashedInput) {
+    if (timingSafeEqual(pin, hashedInput)) {
       return true;
     }
     // Installs updated from a version that stored the PIN as plaintext still
     // have the raw value here. Accept it once, then upgrade storage to the
     // hash so every verification after this one goes through the safe path.
-    if (pin === inputPin) {
+    if (timingSafeEqual(pin, inputPin)) {
       await AsyncStorage.setItem('user_pin', hashedInput);
       setPinState(hashedInput);
       return true;

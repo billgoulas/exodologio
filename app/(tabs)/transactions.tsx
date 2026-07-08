@@ -125,8 +125,8 @@ export default function TransactionsScreen() {
           if (filterId.startsWith('pm_')) {
             const pmId = filterId.slice(3);
             return tx.paymentMethod === pmId ||
-              (tx as any).transferFrom === pmId ||
-              (tx as any).transferTo === pmId;
+              tx.transferFrom === pmId ||
+              tx.transferTo === pmId;
           }
           return tx.category === filterId;
         });

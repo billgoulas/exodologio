@@ -19,16 +19,6 @@ interface RangeOption {
   label: string;
 }
 
-// Map payment method IDs to translation keys
-const PAYMENT_METHOD_BALANCE_KEYS: Record<string, string> = {
-  credit_card: 'home.creditCardBalance',
-  debit_card: 'home.debitCardBalance',
-  gift_card: 'home.giftCardBalance',
-  cash: 'home.cashBalance',
-  bank_transfer: 'home.bankTransferBalance',
-  rewards: 'home.rewardsBalance',
-};
-
 // Vibrant colors for each card - unique and eye-catching
 const CARD_COLORS = {
   income: '#10B981',      // Emerald green

@@ -261,16 +261,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
       installmentsToImport = importedData.installments || [];
     }
     
-    // Merge transactions, avoiding duplicates by ID
+    // Merge transactions, avoiding duplicates by ID. Dedup the incoming batch
+    // itself too — a malformed/duplicated backup file could otherwise import
+    // the same id twice, since filtering only against existingTxIds doesn't
+    // catch two new rows that duplicate each other.
     const existingTxIds = new Set(state.transactions.map((t) => t.id));
-    const newTransactions = transactionsToImport.filter((t) => !existingTxIds.has(t.id));
+    const dedupedIncomingTx = Array.from(
+      new Map(transactionsToImport.map((t) => [t.id, t])).values()
+    );
+    const newTransactions = dedupedIncomingTx.filter((t) => !existingTxIds.has(t.id));
     const mergedTransactions = [...state.transactions, ...newTransactions];
     dispatch({ type: 'SET_TRANSACTIONS', payload: mergedTransactions });
-    
-    // Merge installments, avoiding duplicates by ID
+
+    // Merge installments, avoiding duplicates by ID (same incoming-batch dedup as above)
     if (installmentsToImport.length > 0) {
       const existingInstallmentIds = new Set(state.installments.map((i) => i.id));
-      const newInstallments = installmentsToImport.filter((i) => !existingInstallmentIds.has(i.id));
+      const dedupedIncomingInstallments = Array.from(
+        new Map(installmentsToImport.map((i) => [i.id, i])).values()
+      );
+      const newInstallments = dedupedIncomingInstallments.filter((i) => !existingInstallmentIds.has(i.id));
       const mergedInstallments = [...state.installments, ...newInstallments];
       dispatch({ type: 'SET_INSTALLMENTS', payload: mergedInstallments });
     }

@@ -1,4 +1,4 @@
-import { Transaction, TransactionsByCategory, MonthSummary, DateFormat, Currency, Language } from './types';
+import { Transaction, TransactionsByCategory, MonthSummary, DateFormat, Currency, Language, Category } from './types';
 import { CATEGORIES_MAP } from './constants';
 
 /**
@@ -119,7 +119,7 @@ export function getTransactionsByCategory(
     .map(([category, data]) => {
       const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
       return {
-        category: category as any,
+        category: category as Category,
         label: categoryInfo?.label || category,
         icon: categoryInfo?.icon || '📌',
         total: data.total,
@@ -333,8 +333,13 @@ export function getMonthName(month: number, language: Language = 'el'): string {
 }
 
 /**
- * Generate unique ID
+ * Generate a unique ID for a transaction/installment. Combines a timestamp
+ * with two independent random segments so a collision needs the same
+ * millisecond AND two matching Math.random() draws — add/edit-transaction.tsx
+ * used to each keep their own weaker local copy of this (a single, shorter
+ * Math.random() segment with no timestamp), so every id-consuming call site
+ * now shares this one implementation instead.
  */
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
 }

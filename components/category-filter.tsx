@@ -16,7 +16,7 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
 
   // Build chip list: "All" + income categories + expense categories + payment methods
   const chips: { id: string; label: string; icon: string }[] = [
-    { id: '__all__', label: t('transactions.all'), icon: '📋' },
+    { id: '__all__', label: t('transactions.all'), icon: '📂' },
     ...ALL_CATEGORIES.map((cat) => ({
       id: cat.id,
       label: t(`categories.${cat.id}`, cat.label),

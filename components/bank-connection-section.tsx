@@ -97,16 +97,6 @@ export function BankConnectionSection({ onBankConnected }: BankConnectionSection
     return bankNames[bankId] || bankId;
   };
 
-  const getBankIcon = (bankId: string): string => {
-    const icons: Record<string, string> = {
-      alpha: 'account-balance-wallet',
-      eurobank: 'account-balance-wallet',
-      piraeus: 'account-balance-wallet',
-      national: 'account-balance-wallet',
-    };
-    return icons[bankId] || 'account-balance-wallet';
-  };
-
   const formatDate = (date?: Date): string => {
     if (!date) return t('settings.never_synced');
     return new Date(date).toLocaleDateString();
