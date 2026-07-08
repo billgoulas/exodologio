@@ -122,7 +122,8 @@ export default function RootLayoutWrapper() {
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="add-transaction" />
                     <Stack.Screen name="edit-transaction" />
-                    <Stack.Screen name="analytics" />
+                    <Stack.Screen name="edit-installment" />
+                    <Stack.Screen name="charts-view" />
                   </>
                 )}
                 <Stack.Screen name="oauth/callback" />

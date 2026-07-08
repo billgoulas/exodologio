@@ -7,7 +7,6 @@ import { useUser } from '@/lib/user-context';
 import { useI18n } from '@/lib/i18n-context';
 
 export default function OnboardingScreen() {
-  console.log('=== ONBOARDING SCREEN RENDERED ===');
   const router = useRouter();
   const { setUsername, setPin } = useUser();
   const { t } = useI18n();
@@ -15,15 +14,12 @@ export default function OnboardingScreen() {
   const [pin, setPinState] = useState('');
   const [confirmPin, setConfirmPinState] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  console.log('Onboarding state:', { username, pin, confirmPin, isLoading });
-  
+
   // For debugging: clear user data
   const handleClearData = async () => {
     try {
       await AsyncStorage.removeItem('username');
       await AsyncStorage.removeItem('user_pin');
-      console.log('User data cleared');
       // Reload the app
       window.location.reload();
     } catch (error) {
@@ -32,7 +28,6 @@ export default function OnboardingScreen() {
   };
 
   const handleContinue = async () => {
-    console.log('handleContinue called');
     // Validation
     if (!username.trim()) {
       Alert.alert(t('error'), t('username_required'));
@@ -56,29 +51,14 @@ export default function OnboardingScreen() {
 
     try {
       setIsLoading(true);
-      console.log('Onboarding: Saving username and PIN', { username: username.trim(), pin });
-      
+
       // Save username first
       await setUsername(username.trim());
-      console.log('Onboarding: Username saved');
-      
-      // Save PIN via UserContext
+
+      // Save PIN via UserContext (hashed before it ever touches storage)
       await setPin(pin);
-      console.log('Onboarding: PIN saved via UserContext');
-      
-      // Also save PIN directly to AsyncStorage as fallback
-      await AsyncStorage.setItem('user_pin', pin);
-      console.log('Onboarding: PIN saved directly to AsyncStorage:', pin);
-      
-      // Verify PIN was saved
-      const savedPin = await AsyncStorage.getItem('user_pin');
-      console.log('Onboarding: Verification - PIN in AsyncStorage:', savedPin);
-      
-      // Add a small delay to ensure AsyncStorage write completes
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Navigate to home screen
-      console.log('Onboarding: Navigating to home');
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Onboarding error:', error);
@@ -158,13 +138,7 @@ export default function OnboardingScreen() {
         {/* Continue Button */}
         <Pressable
           className="bg-primary rounded-lg py-4 items-center"
-          onPress={() => {
-            console.log('=== BUTTON PRESSED ===');
-            console.log('Username:', username);
-            console.log('PIN:', pin);
-            console.log('Confirm PIN:', confirmPin);
-            handleContinue();
-          }}
+          onPress={handleContinue}
           disabled={isLoading}
         >
           <Text className="text-white font-semibold text-base">

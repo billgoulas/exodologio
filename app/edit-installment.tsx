@@ -9,8 +9,8 @@ import { generateId } from '@/lib/utils-calc';
 import { Transaction } from '@/lib/types';
 import { useI18n } from '@/lib/i18n-context';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { Installment } from '@/lib/types';
 import { formatDate } from '@/lib/utils-calc';
+import { buildInstallmentSummaries } from '@/lib/rebuild-installments';
 import { useColors } from '@/hooks/use-colors';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 
@@ -18,7 +18,7 @@ export default function EditInstallmentScreen() {
   const router = useRouter();
   const { id, readOnly } = useLocalSearchParams<{ id: string; readOnly?: string }>();
   const isReadOnly = readOnly === 'true';
-  const { state, updateInstallment, deleteInstallment, addTransaction, deleteTransaction } = useAppContext();
+  const { state, addTransaction, deleteTransaction } = useAppContext();
   const { t, language } = useI18n();
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -50,28 +50,35 @@ export default function EditInstallmentScreen() {
   const dateFormat = state.settings.dateFormat;
   const displayDate = formatDate(installmentDate, dateFormat);
 
-  // Load installment data on mount
+  // Load installment data on mount — derived directly from the transactions that
+  // make up this installment plan (the same source the Installments tab lists from),
+  // not the separate, unused `state.installments` store.
   useEffect(() => {
     if (id) {
-      const installment = state.installments.find(i => i.id === id);
-      if (installment) {
-        // Format amount with locale decimal separator
+      const summary = buildInstallmentSummaries(state.transactions).find(
+        (s) => s.installmentId === id
+      );
+      if (summary) {
         const lang = state.settings.language;
         const decimalSeparator = lang === 'el' ? ',' : '.';
-        const formattedAmount = installment.amount.toString().replace('.', decimalSeparator);
+        const formattedAmount = summary.installmentAmount.toString().replace('.', decimalSeparator);
         setAmount(formattedAmount);
-        setCount(installment.count.toString());
-        setTotalCount(installment.totalCount?.toString() || installment.count.toString());
-        setInstallmentDate(installment.createdAt.split('T')[0]);
-        setBank(installment.bank || '');
-        setPaymentMethod(installment.paymentMethod as any);
-        setDescription(installment.notes || '');
-        setOriginalCreatedAt(installment.createdAt);
-        setPickerDate(new Date(installment.createdAt));
+        setCount(summary.remainingInstallments.toString());
+        setTotalCount(summary.totalInstallments.toString());
+        setInstallmentDate(summary.nextPaymentDate);
+        setBank(summary.bank || '');
+        setPaymentMethod((summary.paymentMethod as any) || 'standing_order');
+        setDescription(summary.description || '');
+        setOriginalCreatedAt(summary.nextPaymentDate);
+        setPickerDate(new Date(summary.nextPaymentDate));
+      } else {
+        Alert.alert(t('common.error'), t('installment.notFound') || 'Installment not found');
+        router.back();
       }
     }
     setIsLoading(false);
-  }, [id, state.installments]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const handleAmountChange = (text: string) => {
     const lang = state.settings.language;
@@ -113,21 +120,18 @@ export default function EditInstallmentScreen() {
     }
 
     if (id) {
-      const currentInstallment = state.installments.find(i => i.id === id);
-      
       // Delete all old transactions associated with this installment
       const oldTransactions = state.transactions.filter(t => t.installmentId === id);
       oldTransactions.forEach(tx => {
         deleteTransaction(tx.id);
       });
-      
+
       // Create new transactions with updated data
       const remainingCount = parseInt(count);
       const totalCountValue = parseInt(totalCount || count);
       const currentDate = new Date(installmentDate);
-      // Get username from transactions or use default
-      const lastTransaction = state.transactions.find(t => t.remainingInstallments !== undefined || t.totalInstallments !== undefined);
-      const username = lastTransaction?.username || 'Unknown';
+      // Preserve the original creator's username
+      const username = oldTransactions[0]?.username || 'Unknown';
       
       // Map payment method
       const paymentMethodMap: Record<string, any> = {
@@ -165,47 +169,24 @@ export default function EditInstallmentScreen() {
         };
         addTransaction(transaction);
       }
-      
-      // Update the installment object
-      const updatedInstallment: Installment = {
-        id,
-        amount: parseFloat(standardAmount),
-        count: remainingCount,
-        totalCount: totalCountValue,
-        startDay: 1,
-        endDay: 1,
-        bank,
-        paymentMethod: paymentMethod as any,
-        notes: description,
-        createdAt: installmentDate,
-        isExpanded: currentInstallment?.isExpanded ?? false,
-      };
 
-      updateInstallment(updatedInstallment);
       router.back();
     }
   };
 
   const handleDelete = () => {
     const confirmMessage = t('installment.deleteConfirm') || 'Are you sure you want to delete this payment?';
-    const installment = state.installments.find(i => i.id === id);
+
+    const deleteAllInstallmentTransactions = () => {
+      if (!id) return;
+      const matching = state.transactions.filter(t => t.installmentId === id);
+      matching.forEach(tx => deleteTransaction(tx.id));
+      router.back();
+    };
 
     if (typeof window !== 'undefined' && window.confirm) {
       if (window.confirm(confirmMessage)) {
-        if (id && installment) {
-          if (installment.isExpanded) {
-            // For expanded installments, decrease count by 1
-            const updatedInstallment: Installment = {
-              ...installment,
-              count: Math.max(0, installment.count - 1),
-            };
-            updateInstallment(updatedInstallment);
-          } else {
-            // For non-expanded, delete the entire installment
-            deleteInstallment(id);
-          }
-          router.back();
-        }
+        deleteAllInstallmentTransactions();
       }
     } else {
       Alert.alert(
@@ -215,22 +196,7 @@ export default function EditInstallmentScreen() {
           { text: t('common.cancel'), onPress: () => {}, style: 'cancel' },
           {
             text: t('common.delete'),
-            onPress: () => {
-              if (id && installment) {
-                if (installment.isExpanded) {
-                  // For expanded installments, decrease count by 1
-                  const updatedInstallment: Installment = {
-                    ...installment,
-                    count: Math.max(0, installment.count - 1),
-                  };
-                  updateInstallment(updatedInstallment);
-                } else {
-                  // For non-expanded, delete the entire installment
-                  deleteInstallment(id);
-                }
-                router.back();
-              }
-            },
+            onPress: deleteAllInstallmentTransactions,
             style: 'destructive',
           },
         ]

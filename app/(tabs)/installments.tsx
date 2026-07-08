@@ -1,6 +1,6 @@
 'use client';
 
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { View, ScrollView, Text, Pressable } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
@@ -12,6 +12,7 @@ import { buildInstallmentSummaries, InstallmentPlanSummary } from '@/lib/rebuild
 import { InstallmentSummaryCard } from '@/components/installment-summary-card';
 
 export default function InstallmentsScreen() {
+  const router = useRouter();
   const { state } = useAppContext();
   const { t, language } = useI18n();
   const colors = useColors();
@@ -70,14 +71,19 @@ export default function InstallmentsScreen() {
             contentContainerStyle={{ paddingBottom: 20 }}
           >
             {summaries.map((summary) => (
-              <InstallmentSummaryCard
+              <Pressable
                 key={summary.installmentId}
-                summary={summary}
-                currency={state.settings.currency}
-                dateFormat={state.settings.dateFormat}
-                language={language}
-                t={t}
-              />
+                onPress={() => router.push(`/edit-installment?id=${summary.installmentId}`)}
+                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+              >
+                <InstallmentSummaryCard
+                  summary={summary}
+                  currency={state.settings.currency}
+                  dateFormat={state.settings.dateFormat}
+                  language={language}
+                  t={t}
+                />
+              </Pressable>
             ))}
           </ScrollView>
         )}

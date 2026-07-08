@@ -8,6 +8,13 @@ import { protectedProcedure, router } from "./_core/trpc";
 import * as bankDb from "./bank-db";
 import { BankConnection } from "../drizzle/schema";
 
+// The client never needs the raw OAuth tokens — strip them before returning
+// a connection over the wire. They stay decrypted only in server memory.
+function toClientConnection(connection: BankConnection): Omit<BankConnection, "accessToken" | "refreshToken"> {
+  const { accessToken, refreshToken, ...rest } = connection;
+  return rest;
+}
+
 /**
  * Validation Schemas
  */
@@ -71,7 +78,8 @@ export const bankRouter = router({
   // Get all bank connections for the current user
   listConnections: protectedProcedure.query(async ({ ctx }) => {
     try {
-      return await bankDb.getUserBankConnections(ctx.user.id);
+      const connections = await bankDb.getUserBankConnections(ctx.user.id);
+      return connections.map(toClientConnection);
     } catch (error) {
       console.error("[tRPC] Failed to list bank connections:", error);
       throw error;
@@ -81,13 +89,13 @@ export const bankRouter = router({
   // Get a specific bank connection
   getConnection: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
-        const connection = await bankDb.getBankConnection(input.id);
+        const connection = await bankDb.getBankConnection(input.id, ctx.user.id);
         if (!connection) {
           throw new Error("Bank connection not found");
         }
-        return connection;
+        return toClientConnection(connection);
       } catch (error) {
         console.error("[tRPC] Failed to get bank connection:", error);
         throw error;
@@ -108,7 +116,7 @@ export const bankRouter = router({
           throw new Error("Failed to create bank connection");
         }
 
-        return connection;
+        return toClientConnection(connection);
       } catch (error) {
         console.error("[tRPC] Failed to create bank connection:", error);
         throw error;
@@ -118,15 +126,15 @@ export const bankRouter = router({
   // Update a bank connection
   updateConnection: protectedProcedure
     .input(UpdateBankConnectionSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        const connection = await bankDb.updateBankConnection(input.id, input);
+        const connection = await bankDb.updateBankConnection(input.id, ctx.user.id, input);
 
         if (!connection) {
           throw new Error("Failed to update bank connection");
         }
 
-        return connection;
+        return toClientConnection(connection);
       } catch (error) {
         console.error("[tRPC] Failed to update bank connection:", error);
         throw error;
@@ -136,9 +144,9 @@ export const bankRouter = router({
   // Disconnect a bank connection
   disconnectConnection: protectedProcedure
     .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        await bankDb.disconnectBankConnection(input.id);
+        await bankDb.disconnectBankConnection(input.id, ctx.user.id);
         return { success: true };
       } catch (error) {
         console.error("[tRPC] Failed to disconnect bank connection:", error);
@@ -153,9 +161,9 @@ export const bankRouter = router({
   // Get transactions for a specific bank connection
   getTransactions: protectedProcedure
     .input(z.object({ bankConnectionId: z.number() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
-        return await bankDb.getBankTransactionsByConnection(input.bankConnectionId);
+        return await bankDb.getBankTransactionsByConnection(input.bankConnectionId, ctx.user.id);
       } catch (error) {
         console.error("[tRPC] Failed to get bank transactions:", error);
         throw error;
@@ -167,6 +175,12 @@ export const bankRouter = router({
     .input(CreateBankTransactionSchema)
     .mutation(async ({ ctx, input }) => {
       try {
+        // Verify the connection this transaction is attributed to actually belongs to the caller
+        const connection = await bankDb.getBankConnection(input.bankConnectionId, ctx.user.id);
+        if (!connection) {
+          throw new Error("Bank connection not found");
+        }
+
         const transaction = await bankDb.createBankTransaction({
           userId: ctx.user.id,
           ...input,
@@ -190,9 +204,9 @@ export const bankRouter = router({
   // Get sync logs for a bank connection
   getSyncLogs: protectedProcedure
     .input(z.object({ bankConnectionId: z.number(), limit: z.number().default(10) }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
-        return await bankDb.getSyncLogsByConnection(input.bankConnectionId, input.limit);
+        return await bankDb.getSyncLogsByConnection(input.bankConnectionId, ctx.user.id, input.limit);
       } catch (error) {
         console.error("[tRPC] Failed to get sync logs:", error);
         throw error;
@@ -259,11 +273,11 @@ export const bankRouter = router({
   // Verify OAuth state
   verifyOAuthState: protectedProcedure
     .input(z.object({ stateToken: z.string() }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       try {
         const state = await bankDb.getOAuthStateByToken(input.stateToken);
 
-        if (!state) {
+        if (!state || state.userId !== ctx.user.id) {
           throw new Error("OAuth state not found");
         }
 
@@ -285,9 +299,9 @@ export const bankRouter = router({
   // Mark OAuth state as used
   markOAuthStateAsUsed: protectedProcedure
     .input(z.object({ stateId: z.number() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        await bankDb.markOAuthStateAsUsed(input.stateId);
+        await bankDb.markOAuthStateAsUsed(input.stateId, ctx.user.id);
         return { success: true };
       } catch (error) {
         console.error("[tRPC] Failed to mark OAuth state as used:", error);

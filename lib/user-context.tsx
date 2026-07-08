@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 
 interface UserContextType {
   username: string | null;
@@ -10,10 +11,14 @@ interface UserContextType {
   updateUsername: (username: string) => Promise<void>;
   setPin: (pin: string) => Promise<void>;
   updatePin: (pin: string) => Promise<void>;
-  verifyPin: (pin: string) => boolean;
+  verifyPin: (pin: string) => Promise<boolean>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
+
+function hashPin(pin: string): Promise<string> {
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, pin);
+}
 
 export function UserProvider({ children }: { children: React.ReactNode }) {
   const [username, setUsernameState] = useState<string | null>(null);
@@ -27,9 +32,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       try {
         const savedUsername = await AsyncStorage.getItem('username');
         const savedPin = await AsyncStorage.getItem('user_pin');
-        
-        console.log('Loading user profile:', { savedUsername, savedPin });
-        
+
         // Only mark as NOT first launch if BOTH username AND PIN are set
         if (savedUsername && savedPin) {
           setUsernameState(savedUsername);
@@ -74,11 +77,9 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const setPin = async (newPin: string) => {
     try {
-      console.log('setPin called with:', newPin);
-      await AsyncStorage.setItem('user_pin', newPin);
-      console.log('PIN saved to AsyncStorage:', newPin);
-      setPinState(newPin);
-      console.log('PIN state updated:', newPin);
+      const hashedPin = await hashPin(newPin);
+      await AsyncStorage.setItem('user_pin', hashedPin);
+      setPinState(hashedPin);
       setIsFirstLaunch(false);
     } catch (error) {
       console.error('Failed to save PIN:', error);
@@ -88,34 +89,21 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   const updatePin = async (newPin: string) => {
     try {
-      console.log('updatePin called with:', newPin);
-      await AsyncStorage.setItem('user_pin', newPin);
-      console.log('PIN updated in AsyncStorage:', newPin);
-      setPinState(newPin);
-      console.log('PIN state updated:', newPin);
+      const hashedPin = await hashPin(newPin);
+      await AsyncStorage.setItem('user_pin', hashedPin);
+      setPinState(hashedPin);
     } catch (error) {
       console.error('Failed to update PIN:', error);
       throw error;
     }
   };
 
-  const verifyPin = (inputPin: string): boolean => {
-    const isValid = pin === inputPin;
-    console.log('PIN Verification Debug:', {
-      storedPin: pin,
-      inputPin: inputPin,
-      match: isValid,
-      storedPinType: typeof pin,
-      inputPinType: typeof inputPin,
-      storedPinLength: pin?.length,
-      inputPinLength: inputPin?.length,
-    });
-    
+  const verifyPin = async (inputPin: string): Promise<boolean> => {
     if (!pin) {
-      console.warn('WARNING: PIN is null or undefined in state. This should not happen.');
+      return false;
     }
-    
-    return isValid;
+    const hashedInput = await hashPin(inputPin);
+    return pin === hashedInput;
   };
 
   return (

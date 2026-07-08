@@ -5,6 +5,7 @@
 
 import { eq, and, desc } from "drizzle-orm";
 import { getDb } from "./db";
+import { encryptSecret, decryptSecret } from "./_core/crypto";
 import {
   BankConnection,
   InsertBankConnection,
@@ -21,6 +22,27 @@ import {
 } from "../drizzle/schema";
 
 /**
+ * OAuth tokens are encrypted at rest (see server/_core/crypto.ts). These helpers
+ * encrypt before writes and decrypt after reads so every other function in this
+ * file can keep working with plain tokens.
+ */
+function encryptConnectionTokens<T extends Partial<InsertBankConnection>>(data: T): T {
+  return {
+    ...data,
+    accessToken: data.accessToken ? encryptSecret(data.accessToken) : data.accessToken,
+    refreshToken: data.refreshToken ? encryptSecret(data.refreshToken) : data.refreshToken,
+  };
+}
+
+function decryptConnectionTokens(connection: BankConnection): BankConnection {
+  return {
+    ...connection,
+    accessToken: connection.accessToken ? decryptSecret(connection.accessToken) : connection.accessToken,
+    refreshToken: connection.refreshToken ? decryptSecret(connection.refreshToken) : connection.refreshToken,
+  };
+}
+
+/**
  * Bank Connections
  */
 
@@ -34,7 +56,7 @@ export async function createBankConnection(
   }
 
   try {
-    await db.insert(bankConnections).values(data);
+    await db.insert(bankConnections).values(encryptConnectionTokens(data));
 
     // Return the most recently created connection for this user
     const connections = await db
@@ -44,14 +66,14 @@ export async function createBankConnection(
       .orderBy(desc(bankConnections.createdAt))
       .limit(1);
 
-    return connections.length > 0 ? connections[0] : null;
+    return connections.length > 0 ? decryptConnectionTokens(connections[0]) : null;
   } catch (error) {
     console.error("[Database] Failed to create bank connection:", error);
     throw error;
   }
 }
 
-export async function getBankConnection(id: number): Promise<BankConnection | null> {
+export async function getBankConnection(id: number, userId: number): Promise<BankConnection | null> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get bank connection: database not available");
@@ -61,10 +83,10 @@ export async function getBankConnection(id: number): Promise<BankConnection | nu
   const result = await db
     .select()
     .from(bankConnections)
-    .where(eq(bankConnections.id, id))
+    .where(and(eq(bankConnections.id, id), eq(bankConnections.userId, userId)))
     .limit(1);
 
-  return result.length > 0 ? result[0] : null;
+  return result.length > 0 ? decryptConnectionTokens(result[0]) : null;
 }
 
 export async function getUserBankConnections(userId: number): Promise<BankConnection[]> {
@@ -74,15 +96,18 @@ export async function getUserBankConnections(userId: number): Promise<BankConnec
     return [];
   }
 
-  return db
+  const results = await db
     .select()
     .from(bankConnections)
     .where(and(eq(bankConnections.userId, userId), eq(bankConnections.isActive, true)))
     .orderBy(desc(bankConnections.connectedAt));
+
+  return results.map(decryptConnectionTokens);
 }
 
 export async function updateBankConnection(
   id: number,
+  userId: number,
   data: Partial<InsertBankConnection>
 ): Promise<BankConnection | null> {
   const db = await getDb();
@@ -92,16 +117,19 @@ export async function updateBankConnection(
   }
 
   try {
-    await db.update(bankConnections).set(data).where(eq(bankConnections.id, id));
+    await db
+      .update(bankConnections)
+      .set(encryptConnectionTokens(data))
+      .where(and(eq(bankConnections.id, id), eq(bankConnections.userId, userId)));
 
-    return getBankConnection(id);
+    return getBankConnection(id, userId);
   } catch (error) {
     console.error("[Database] Failed to update bank connection:", error);
     throw error;
   }
 }
 
-export async function disconnectBankConnection(id: number): Promise<void> {
+export async function disconnectBankConnection(id: number, userId: number): Promise<void> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot disconnect bank connection: database not available");
@@ -115,7 +143,7 @@ export async function disconnectBankConnection(id: number): Promise<void> {
         isActive: false,
         disconnectedAt: new Date(),
       })
-      .where(eq(bankConnections.id, id));
+      .where(and(eq(bankConnections.id, id), eq(bankConnections.userId, userId)));
   } catch (error) {
     console.error("[Database] Failed to disconnect bank connection:", error);
     throw error;
@@ -154,7 +182,8 @@ export async function createBankTransaction(
 }
 
 export async function getBankTransactionsByConnection(
-  bankConnectionId: number
+  bankConnectionId: number,
+  userId: number
 ): Promise<BankTransaction[]> {
   const db = await getDb();
   if (!db) {
@@ -165,7 +194,12 @@ export async function getBankTransactionsByConnection(
   return db
     .select()
     .from(bankTransactions)
-    .where(eq(bankTransactions.bankConnectionId, bankConnectionId))
+    .where(
+      and(
+        eq(bankTransactions.bankConnectionId, bankConnectionId),
+        eq(bankTransactions.userId, userId)
+      )
+    )
     .orderBy(desc(bankTransactions.transactionDate));
 }
 
@@ -250,6 +284,7 @@ export async function createBankSyncLog(data: InsertBankSyncLog): Promise<BankSy
 
 export async function getSyncLogsByConnection(
   bankConnectionId: number,
+  userId: number,
   limit: number = 10
 ): Promise<BankSyncLog[]> {
   const db = await getDb();
@@ -261,7 +296,9 @@ export async function getSyncLogsByConnection(
   return db
     .select()
     .from(bankSyncLogs)
-    .where(eq(bankSyncLogs.bankConnectionId, bankConnectionId))
+    .where(
+      and(eq(bankSyncLogs.bankConnectionId, bankConnectionId), eq(bankSyncLogs.userId, userId))
+    )
     .orderBy(desc(bankSyncLogs.createdAt))
     .limit(limit);
 }
@@ -310,7 +347,7 @@ export async function getOAuthStateByToken(stateToken: string): Promise<BankOAut
   return result.length > 0 ? result[0] : null;
 }
 
-export async function markOAuthStateAsUsed(id: number): Promise<void> {
+export async function markOAuthStateAsUsed(id: number, userId: number): Promise<void> {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot mark OAuth state as used: database not available");
@@ -324,7 +361,7 @@ export async function markOAuthStateAsUsed(id: number): Promise<void> {
         isUsed: true,
         usedAt: new Date(),
       })
-      .where(eq(bankOAuthState.id, id));
+      .where(and(eq(bankOAuthState.id, id), eq(bankOAuthState.userId, userId)));
   } catch (error) {
     console.error("[Database] Failed to mark OAuth state as used:", error);
     throw error;

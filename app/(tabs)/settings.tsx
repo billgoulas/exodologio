@@ -49,7 +49,7 @@ export default function SettingsScreen() {
   };
 
   const handlePinVerified = async (pin: string) => {
-    if (!verifyPin(pin)) {
+    if (!(await verifyPin(pin))) {
       Alert.alert(t('common.error'), t('settings.invalid_pin'));
       return;
     }

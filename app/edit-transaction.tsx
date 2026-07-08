@@ -16,6 +16,8 @@ import { formatDate } from '@/lib/utils-calc';
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Transfer source options: Bank Account, Investment Account, and Cash
 const TRANSFER_FROM_OPTIONS: { id: PaymentMethod; icon: string }[] = [
   { id: 'bank_transfer', icon: '🏦' },
@@ -155,11 +157,12 @@ export default function EditTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
+    const sep = escapeRegExp(decimalSeparator);
+    let formatted = text.replace(new RegExp(escapeRegExp(otherSeparator), 'g'), decimalSeparator);
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
     setAmount(formatted);
   };
 
@@ -167,11 +170,12 @@ export default function EditTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
+    const sep = escapeRegExp(decimalSeparator);
+    let formatted = text.replace(new RegExp(escapeRegExp(otherSeparator), 'g'), decimalSeparator);
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
     setInstallmentAmount(formatted);
   };
 
@@ -298,9 +302,14 @@ export default function EditTransactionScreen() {
       if (!originalTx) return;
       
       const installmentId = originalTx.installmentId || id;
-      
-      // Delete all old transactions with this installmentId
-      const oldTransactions = state.transactions.filter(t => t.installmentId === installmentId);
+
+      // Delete all old transactions with this installmentId. When converting a
+      // plain (non-installment) transaction, originalTx has no installmentId set,
+      // so it wouldn't match that filter on its own — include its own id explicitly
+      // so it doesn't survive alongside the newly generated installment rows.
+      const oldTransactions = state.transactions.filter(
+        t => t.installmentId === installmentId || t.id === originalTx.id
+      );
       oldTransactions.forEach(tx => {
         deleteTransaction(tx.id);
       });

@@ -16,6 +16,8 @@ import { formatDate } from '@/lib/utils-calc';
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 // Transfer source options: Bank Account and Cash
 const TRANSFER_FROM_OPTIONS: { id: PaymentMethod; icon: string }[] = [
   { id: 'bank_transfer', icon: '🏦' },
@@ -134,11 +136,12 @@ export default function AddTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
+    const sep = escapeRegExp(decimalSeparator);
+    let formatted = text.replace(new RegExp(escapeRegExp(otherSeparator), 'g'), decimalSeparator);
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
     setAmount(formatted);
   };
 
@@ -146,11 +149,12 @@ export default function AddTransactionScreen() {
     const language = state.settings.language;
     const decimalSeparator = language === 'el' ? ',' : '.';
     const otherSeparator = decimalSeparator === ',' ? '.' : ',';
-    let formatted = text.replace(new RegExp(`\\${otherSeparator}`, 'g'), decimalSeparator);
+    const sep = escapeRegExp(decimalSeparator);
+    let formatted = text.replace(new RegExp(escapeRegExp(otherSeparator), 'g'), decimalSeparator);
     formatted = formatted
-      .replace(new RegExp(`[^0-9${decimalSeparator}]`, 'g'), '')
-      .replace(new RegExp(`(${decimalSeparator}.*?)${decimalSeparator}`, 'g'), '$1')
-      .replace(new RegExp(`(${decimalSeparator}\\d{2})\\d+`, 'g'), '$1');
+      .replace(new RegExp(`[^0-9${sep}]`, 'g'), '')
+      .replace(new RegExp(`(${sep}.*?)${sep}`, 'g'), '$1')
+      .replace(new RegExp(`(${sep}\\d{2})\\d+`, 'g'), '$1');
     setInstallmentAmount(formatted);
   };
 
