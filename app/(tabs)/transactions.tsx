@@ -71,13 +71,16 @@ export default function TransactionsScreen() {
         startDate.setDate(today.getDate() - 2);
         break;
       case 'week':
-        startDate.setDate(today.getDate() - 7);
+        // 7 days inclusive of today: today - 6
+        startDate.setDate(today.getDate() - 6);
         break;
       case 'twoweeks':
-        startDate.setDate(today.getDate() - 15);
+        // 15 days inclusive of today: today - 14
+        startDate.setDate(today.getDate() - 14);
         break;
       case 'month':
-        startDate.setDate(today.getDate() - 30);
+        // 30 days inclusive of today: today - 29
+        startDate.setDate(today.getDate() - 29);
         break;
       case '3months':
         startDate.setMonth(today.getMonth() - 3);

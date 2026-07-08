@@ -129,7 +129,7 @@ export function TransactionItem({
               </Text>
             )}
             {transaction.username && (
-              <Text className="text-xs text-muted mt-1">by {transaction.username}</Text>
+              <Text className="text-xs text-muted mt-1">{t('common.createdBy', 'by')} {transaction.username}</Text>
             )}
           </View>
         </View>

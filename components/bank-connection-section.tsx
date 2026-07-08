@@ -166,10 +166,10 @@ export function BankConnectionSection({ onBankConnected }: BankConnectionSection
                       style={{
                         backgroundColor:
                           connection.syncStatus === 'active'
-                            ? '#D1FAE5'
+                            ? `${colors.success}33`
                             : connection.syncStatus === 'error'
-                              ? '#FEE2E2'
-                              : '#FEF3C7',
+                              ? `${colors.error}33`
+                              : `${colors.warning}33`,
                       }}
                     >
                       <Text
@@ -177,13 +177,13 @@ export function BankConnectionSection({ onBankConnected }: BankConnectionSection
                         style={{
                           color:
                             connection.syncStatus === 'active'
-                              ? '#065F46'
+                              ? colors.success
                               : connection.syncStatus === 'error'
-                                ? '#7F1D1D'
-                                : '#92400E',
+                                ? colors.error
+                                : colors.warning,
                         }}
                       >
-                        {connection.syncStatus}
+                        {t(`settings.syncStatus_${connection.syncStatus}`, connection.syncStatus)}
                       </Text>
                     </View>
                   </View>
@@ -201,12 +201,12 @@ export function BankConnectionSection({ onBankConnected }: BankConnectionSection
                         paddingVertical: 8,
                         paddingHorizontal: 12,
                         borderRadius: 6,
-                        backgroundColor: '#FEE2E2',
+                        backgroundColor: `${colors.error}33`,
                         opacity: pressed ? 0.7 : 1,
                       },
                     ]}
                   >
-                    <Text className="text-xs font-semibold text-center" style={{ color: '#DC2626' }}>
+                    <Text className="text-xs font-semibold text-center" style={{ color: colors.error }}>
                       {t('common.disconnect')}
                     </Text>
                   </Pressable>

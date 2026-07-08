@@ -56,14 +56,16 @@ export async function createBankConnection(
   }
 
   try {
-    await db.insert(bankConnections).values(encryptConnectionTokens(data));
+    // Fetch by the insert's own auto-increment id rather than "most recent
+    // row for this user" — under concurrent connection requests for the same
+    // user, an order-by-createdAt-limit-1 re-fetch can race and return a
+    // different connection than the one just inserted.
+    const [result] = await db.insert(bankConnections).values(encryptConnectionTokens(data));
 
-    // Return the most recently created connection for this user
     const connections = await db
       .select()
       .from(bankConnections)
-      .where(eq(bankConnections.userId, data.userId!))
-      .orderBy(desc(bankConnections.createdAt))
+      .where(eq(bankConnections.id, result.insertId))
       .limit(1);
 
     return connections.length > 0 ? decryptConnectionTokens(connections[0]) : null;
@@ -164,14 +166,14 @@ export async function createBankTransaction(
   }
 
   try {
-    await db.insert(bankTransactions).values(data);
+    // Fetch by the insert's own auto-increment id — see createBankConnection
+    // for why an order-by-createdAt-limit-1 re-fetch is race-prone here.
+    const [result] = await db.insert(bankTransactions).values(data);
 
-    // Return the most recently created transaction
     const transactions = await db
       .select()
       .from(bankTransactions)
-      .where(eq(bankTransactions.bankConnectionId, data.bankConnectionId!))
-      .orderBy(desc(bankTransactions.createdAt))
+      .where(eq(bankTransactions.id, result.insertId))
       .limit(1);
 
     return transactions.length > 0 ? transactions[0] : null;
@@ -203,56 +205,6 @@ export async function getBankTransactionsByConnection(
     .orderBy(desc(bankTransactions.transactionDate));
 }
 
-export async function getBankTransactionByBankId(
-  bankConnectionId: number,
-  bankTransactionId: string
-): Promise<BankTransaction | null> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot get bank transaction: database not available");
-    return null;
-  }
-
-  const result = await db
-    .select()
-    .from(bankTransactions)
-    .where(
-      and(
-        eq(bankTransactions.bankConnectionId, bankConnectionId),
-        eq(bankTransactions.bankTransactionId, bankTransactionId)
-      )
-    )
-    .limit(1);
-
-  return result.length > 0 ? result[0] : null;
-}
-
-export async function updateBankTransaction(
-  id: number,
-  data: Partial<InsertBankTransaction>
-): Promise<BankTransaction | null> {
-  const db = await getDb();
-  if (!db) {
-    console.warn("[Database] Cannot update bank transaction: database not available");
-    return null;
-  }
-
-  try {
-    await db.update(bankTransactions).set(data).where(eq(bankTransactions.id, id));
-
-    const result = await db
-      .select()
-      .from(bankTransactions)
-      .where(eq(bankTransactions.id, id))
-      .limit(1);
-
-    return result.length > 0 ? result[0] : null;
-  } catch (error) {
-    console.error("[Database] Failed to update bank transaction:", error);
-    throw error;
-  }
-}
-
 /**
  * Bank Sync Logs
  */
@@ -265,14 +217,14 @@ export async function createBankSyncLog(data: InsertBankSyncLog): Promise<BankSy
   }
 
   try {
-    await db.insert(bankSyncLogs).values(data);
+    // Fetch by the insert's own auto-increment id — see createBankConnection
+    // for why an order-by-createdAt-limit-1 re-fetch is race-prone here.
+    const [result] = await db.insert(bankSyncLogs).values(data);
 
-    // Return the most recently created sync log
     const logs = await db
       .select()
       .from(bankSyncLogs)
-      .where(eq(bankSyncLogs.bankConnectionId, data.bankConnectionId!))
-      .orderBy(desc(bankSyncLogs.createdAt))
+      .where(eq(bankSyncLogs.id, result.insertId))
       .limit(1);
 
     return logs.length > 0 ? logs[0] : null;

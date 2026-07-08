@@ -2795,6 +2795,20 @@ const ONBOARDING_STRINGS: Record<Language, {
   bg: { welcome: 'Добре дошли в Exodologio', description: 'Нека настроим профила ви, за да започнете', digits: 'цифри', enterPin: 'Въведете ПИН', confirmPin: 'Потвърдете ПИН', usernameTooShort: 'Потребителското име трябва да съдържа поне 2 знака', setupFailed: 'Настройката е неуспешна', continueLabel: 'Продължи' },
 };
 
+// components/transaction-item.tsx hardcoded the English word "by" in front of
+// the creator's username regardless of the selected language.
+const CREATED_BY_STRINGS: Record<Language, string> = {
+  el: 'από',
+  en: 'by',
+  fr: 'par',
+  de: 'von',
+  it: 'da',
+  es: 'por',
+  ru: 'от',
+  sq: 'nga',
+  bg: 'от',
+};
+
 // Bank connection strings previously existed only in Greek inline above;
 // lib/translations/bank.ts has the full 9-language set, so merge it into
 // `settings` for every language instead of hand-duplicating it here.
@@ -2834,10 +2848,27 @@ const SETTINGS_STRINGS: Record<Language, {
   bg: { sharingNotAvailable: 'Споделянето не е налично на това устройство.', noFileSelected: 'Не е избран файл', invalidBackupFormat: 'Невалиден формат на резервния файл', transactionsImportedSuccessfully: 'транзакции бяха импортирани успешно', importFailed: 'Импортирането е неуспешно', selectFileFailed: 'Изборът на файл е неуспешен', pinNotSet: 'Не е зададен', setPin: 'Задаване на PIN', setInitialPin: 'Задаване на начален PIN' },
 };
 
+// bank-connection-section.tsx rendered the server's raw syncStatus enum
+// ("active" | "error" | "expired", see server/bank-router.ts) directly as UI
+// text, regardless of the selected language.
+const SYNC_STATUS_STRINGS: Record<Language, { syncStatus_active: string; syncStatus_error: string; syncStatus_expired: string }> = {
+  el: { syncStatus_active: 'Ενεργή', syncStatus_error: 'Σφάλμα', syncStatus_expired: 'Έληξε' },
+  en: { syncStatus_active: 'Active', syncStatus_error: 'Error', syncStatus_expired: 'Expired' },
+  fr: { syncStatus_active: 'Active', syncStatus_error: 'Erreur', syncStatus_expired: 'Expirée' },
+  de: { syncStatus_active: 'Aktiv', syncStatus_error: 'Fehler', syncStatus_expired: 'Abgelaufen' },
+  it: { syncStatus_active: 'Attiva', syncStatus_error: 'Errore', syncStatus_expired: 'Scaduta' },
+  es: { syncStatus_active: 'Activa', syncStatus_error: 'Error', syncStatus_expired: 'Caducada' },
+  ru: { syncStatus_active: 'Активно', syncStatus_error: 'Ошибка', syncStatus_expired: 'Истекло' },
+  sq: { syncStatus_active: 'Aktive', syncStatus_error: 'Gabim', syncStatus_expired: 'Skaduar' },
+  bg: { syncStatus_active: 'Активна', syncStatus_error: 'Грешка', syncStatus_expired: 'Изтекла' },
+};
+
 (Object.keys(translations) as Language[]).forEach((lang) => {
   Object.assign(translations[lang].settings, bankTranslations[lang] || bankTranslations.en);
   Object.assign(translations[lang].settings, SETTINGS_STRINGS[lang] || SETTINGS_STRINGS.en);
+  Object.assign(translations[lang].settings, SYNC_STATUS_STRINGS[lang] || SYNC_STATUS_STRINGS.en);
   (translations[lang] as Record<string, unknown>).onboarding = ONBOARDING_STRINGS[lang] || ONBOARDING_STRINGS.en;
+  (translations[lang].common as Record<string, string>).createdBy = CREATED_BY_STRINGS[lang] || CREATED_BY_STRINGS.en;
 
   const notFound = NOT_FOUND_TRANSLATIONS[lang] || NOT_FOUND_TRANSLATIONS.en;
   (translations[lang].transaction as Record<string, string>).notFound = notFound.transaction;

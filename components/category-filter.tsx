@@ -19,12 +19,12 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
     { id: '__all__', label: t('transactions.all'), icon: '📋' },
     ...ALL_CATEGORIES.map((cat) => ({
       id: cat.id,
-      label: t(`categories.${cat.id}`) || cat.label,
+      label: t(`categories.${cat.id}`, cat.label),
       icon: cat.icon,
     })),
     ...PAYMENT_METHODS.map((pm) => ({
       id: `pm_${pm.id}`,
-      label: t(`paymentMethods.${pm.id}`) || pm.label,
+      label: t(`paymentMethods.${pm.id}`, pm.label),
       icon: pm.icon,
     })),
   ];

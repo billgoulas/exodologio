@@ -31,17 +31,17 @@ interface BarChartProps {
 }
 
 export function BarChart({ data, title, language, type, currency = '€' }: BarChartProps) {
-  const t = (key: string) => {
+  const t = (key: string, defaultValue: string = key) => {
     const keys = key.split('.');
     let value: any = translations[language] || {};
     for (const k of keys) {
       if (value && typeof value === 'object' && k in value) {
         value = value[k];
       } else {
-        return key;
+        return defaultValue;
       }
     }
-    return typeof value === 'string' ? value : key;
+    return typeof value === 'string' ? value : defaultValue;
   };
 
   if (data.length === 0) {
@@ -67,8 +67,7 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
       (k) => monthName.toLowerCase().startsWith(k)
     );
     if (monthKey) {
-      const abbrev = t(`analytics.${monthKey}Abbr`) || monthName.substring(0, 3);
-      return abbrev;
+      return t(`analytics.${monthKey}Abbr`, monthName.substring(0, 3));
     }
     return monthName.substring(0, 3);
   };
@@ -190,7 +189,7 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
               const monthKey = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].find(
                 (k) => monthName.toLowerCase().startsWith(k)
               );
-              displayLabel = monthKey ? t(`analytics.${MONTH_KEY_TO_FULL_NAME[monthKey]}`) : monthName;
+              displayLabel = monthKey ? t(`analytics.${MONTH_KEY_TO_FULL_NAME[monthKey]}`, monthName) : monthName;
             }
             return (
               <View key={index} className="mb-3 pb-3 border-b border-border">

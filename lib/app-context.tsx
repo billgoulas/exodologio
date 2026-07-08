@@ -117,6 +117,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
   }
 }
 
+// What a parsed backup file actually contains: either the old export format
+// (a bare array of transactions) or the current format (an object with
+// transactions/installments/settings). importTransactions() was typed as
+// only accepting Transaction[], which doesn't match what it actually handles
+// and let JSON.parse()'s `any` result silently pass through unchecked.
+type ImportedBackupData = Transaction[] | { transactions?: Transaction[]; installments?: Installment[] };
+
 interface AppContextType {
   state: AppState;
   addTransaction: (transaction: Transaction) => void;
@@ -131,7 +138,7 @@ interface AppContextType {
   setDateFormat: (format: DateFormat) => void;
   setTheme: (theme: Theme) => void;
   setSettings: (settings: AppSettings) => void;
-  importTransactions: (transactions: Transaction[]) => void;
+  importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
   saveState: () => Promise<void>;
@@ -167,6 +174,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (!Array.isArray(parsedState.transactions)) {
           parsedState.transactions = [];
         }
+        // Merge over defaultSettings so a missing/corrupted settings object,
+        // or one missing individual fields from an older schema version,
+        // can't leave state.settings.* undefined for every reader downstream.
+        parsedState.settings = {
+          ...defaultSettings,
+          ...(typeof parsedState.settings === 'object' && parsedState.settings !== null ? parsedState.settings : {}),
+        };
         // Don't rebuild on load - will be done when user opens Installments tab
         dispatch({ type: 'LOAD_STATE', payload: parsedState });
       }
@@ -233,11 +247,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_SETTINGS', payload: settings });
   }, []);
 
-  const importTransactions = useCallback((importedData: any) => {
+  const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
     let installmentsToImport: Installment[] = [];
-    
+
     if (Array.isArray(importedData)) {
       // Old format: direct array of transactions
       transactionsToImport = importedData;

@@ -238,7 +238,12 @@ export default function AddTransactionScreen() {
       return;
     }
 
-    if (!installmentCount || parseInt(installmentCount) <= 0) {
+    if (!installmentCount || Number.isNaN(parseInt(installmentCount)) || parseInt(installmentCount) <= 0) {
+      Alert.alert(t('common.error'), t('installment.invalidCount', 'Please enter a valid count'));
+      return;
+    }
+
+    if (installmentTotalCount && Number.isNaN(parseInt(installmentTotalCount))) {
       Alert.alert(t('common.error'), t('installment.invalidCount', 'Please enter a valid count'));
       return;
     }
@@ -512,11 +517,11 @@ export default function AddTransactionScreen() {
               style={({ pressed }) => [{
                 opacity: pressed ? 0.7 : 1,
                 borderWidth: 1,
-                borderColor: '#334155',
+                borderColor: colors.border,
                 borderRadius: 8,
                 paddingHorizontal: 12,
                 paddingVertical: 10,
-                backgroundColor: '#1e2022',
+                backgroundColor: colors.surface,
               }]}
             >
               <Text className="text-foreground text-base">📅 {displayDate}</Text>
@@ -552,11 +557,11 @@ export default function AddTransactionScreen() {
                 style={({ pressed }) => [{
                   opacity: pressed ? 0.7 : 1,
                   borderWidth: 1,
-                  borderColor: '#334155',
+                  borderColor: colors.border,
                   borderRadius: 8,
                   paddingHorizontal: 12,
                   paddingVertical: 10,
-                  backgroundColor: '#1e2022',
+                  backgroundColor: colors.surface,
                 }]}
               >
                 <Text className="text-foreground text-base">📅 {formatDate(installmentDate, dateFormat)}</Text>

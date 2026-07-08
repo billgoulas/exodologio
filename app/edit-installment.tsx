@@ -301,11 +301,11 @@ export default function EditInstallmentScreen() {
             style={({ pressed }) => [{
               opacity: pressed ? 0.7 : 1,
               borderWidth: 1,
-              borderColor: '#334155',
+              borderColor: colors.border,
               borderRadius: 8,
               paddingHorizontal: 12,
               paddingVertical: 10,
-              backgroundColor: '#1e2022',
+              backgroundColor: colors.surface,
             }]}
           >
             <Text className="text-foreground text-base">📅 {displayDate}</Text>

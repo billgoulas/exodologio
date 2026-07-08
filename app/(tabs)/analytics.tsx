@@ -63,13 +63,16 @@ export default function AnalyticsScreen() {
         startDate.setDate(today.getDate() - 2);
         break;
       case 'week':
-        startDate.setDate(today.getDate() - 7);
+        // 7 days inclusive of today: today - 6
+        startDate.setDate(today.getDate() - 6);
         break;
       case 'twoweeks':
-        startDate.setDate(today.getDate() - 15);
+        // 15 days inclusive of today: today - 14
+        startDate.setDate(today.getDate() - 14);
         break;
       case 'month':
-        startDate.setDate(today.getDate() - 30);
+        // 30 days inclusive of today: today - 29
+        startDate.setDate(today.getDate() - 29);
         break;
       case '3months':
         startDate.setMonth(today.getMonth() - 3);
@@ -116,20 +119,14 @@ export default function AnalyticsScreen() {
       const isInstallment = tx.remainingInstallments !== undefined || tx.totalInstallments !== undefined;
       const isPayment = tx.type === 'transfer';
       
-      // When no filter is active (dateRangeFilter === null), only include installments up to today
+      // Installments are counted for the whole filtered range, same as every
+      // other category here and same as the Home tab's Installments total —
+      // this used to cut installments off at today when no quick-filter was
+      // active, which double-counted nothing but disagreed with Home (which
+      // shows the whole month) and with every other category on this same
+      // screen (which aren't cut off either).
       if (isInstallment) {
-        if (dateRangeFilter === null) {
-          // Only include installments with date <= today
-          const txDate = parseLocalDateString(tx.date);
-          const today = new Date();
-          today.setHours(23, 59, 59, 999);
-          if (txDate <= today) {
-            installmentsTotal += tx.amount;
-          }
-        } else {
-          // When a filter is active, include all installments in the filtered range
-          installmentsTotal += tx.amount;
-        }
+        installmentsTotal += tx.amount;
       } else if (isPayment) {
         paymentsTotal += tx.amount;
       } else if (tx.type === 'expense' && tx.category) {

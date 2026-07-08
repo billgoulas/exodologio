@@ -8,6 +8,7 @@ import { PinVerificationModal } from '@/components/pin-verification-modal';
 import { BankConnectionSection } from '@/components/bank-connection-section';
 import { LANGUAGES, CURRENCIES, DATE_FORMATS } from '@/lib/constants';
 import { Language, Currency, DateFormat, Theme } from '@/lib/types';
+import { formatDate } from '@/lib/utils-calc';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -153,7 +154,7 @@ export default function SettingsScreen() {
             } else if (tx.type === 'transfer') {
               categoryLabel = t('transaction.repayment');
             } else {
-              categoryLabel = t(`categories.${tx.category}`) || tx.category;
+              categoryLabel = t(`categories.${tx.category}`, tx.category);
             }
             
             const currency = state.settings.currency || 'EUR';
@@ -162,13 +163,13 @@ export default function SettingsScreen() {
             // Get payment method label
             let paymentMethodLabel = '';
             if (tx.paymentMethod) {
-              paymentMethodLabel = t(`paymentMethods.${tx.paymentMethod}`) || tx.paymentMethod;
+              paymentMethodLabel = t(`paymentMethods.${tx.paymentMethod}`, tx.paymentMethod);
             } else if (tx.type === 'transfer') {
               // For transfers, show transfer from/to
               if (tx.transferFrom) {
-                paymentMethodLabel = t(`paymentMethods.${tx.transferFrom}`) || tx.transferFrom;
+                paymentMethodLabel = t(`paymentMethods.${tx.transferFrom}`, tx.transferFrom);
               } else if (tx.transferTo) {
-                paymentMethodLabel = t(`paymentMethods.${tx.transferTo}`) || tx.transferTo;
+                paymentMethodLabel = t(`paymentMethods.${tx.transferTo}`, tx.transferTo);
               }
             }
             
@@ -184,7 +185,7 @@ export default function SettingsScreen() {
               txtContent += `   ${t('transaction.bank')}: ${tx.installmentBank}\n`;
             }
             txtContent += `   ${t('transaction.amount')}: ${tx.amount} ${currency}\n`;
-            txtContent += `   ${t('transaction.date')}: ${new Date(tx.date).toLocaleDateString()}\n\n`;
+            txtContent += `   ${t('transaction.date')}: ${formatDate(tx.date, state.settings.dateFormat)}\n\n`;
           });
         }
         
@@ -707,7 +708,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#0A7EA4',
+                backgroundColor: colors.primary,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
@@ -725,7 +726,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#0A7EA4',
+                backgroundColor: colors.primary,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
@@ -743,7 +744,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#DC2626',
+                backgroundColor: colors.error,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
