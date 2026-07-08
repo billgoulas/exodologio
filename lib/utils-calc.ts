@@ -17,6 +17,28 @@ const LANGUAGE_TO_LOCALE: Record<Language, string> = {
 };
 
 /**
+ * Parse a 'YYYY-MM-DD' date-only string as a local calendar date (midnight
+ * local time). `new Date('YYYY-MM-DD')` parses as UTC midnight, which then
+ * shifts by a day when read back with local getters (getDate/getMonth/
+ * getFullYear) in timezones west of UTC — this avoids that entirely.
+ */
+export function parseLocalDateString(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+/**
+ * Format a Date object as a 'YYYY-MM-DD' string using LOCAL date components
+ * (unlike Date#toISOString, which uses UTC and can shift the day).
+ */
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Get transactions for a specific month and year
  */
 export function getTransactionsForMonth(
@@ -25,7 +47,7 @@ export function getTransactionsForMonth(
   year: number
 ): Transaction[] {
   return transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 }
@@ -153,7 +175,7 @@ export function formatNumber(amount: number, language: Language = 'el'): string 
  * Format date based on selected format
  */
 export function formatDate(dateString: string, format: DateFormat): string {
-  const date = new Date(dateString);
+  const date = parseLocalDateString(dateString);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();

@@ -1,5 +1,6 @@
 import { Transaction } from './types';
 import { CATEGORIES_MAP, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
+import { parseLocalDateString } from './utils-calc';
 
 export interface PieChartData {
   category: string;
@@ -55,7 +56,7 @@ export function getExpensePieChartData(
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'expense';
   });
 
@@ -104,7 +105,7 @@ export function getIncomePieChartData(
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'income';
   });
 
@@ -152,7 +153,7 @@ export function getDailyChartData(
   year: number
 ): DailyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
@@ -192,14 +193,14 @@ export function getWeeklyChartData(
   year: number
 ): WeeklyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
   const weeklyData: Record<number, WeeklyChartData> = {};
 
   monthTransactions.forEach((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     const weekNumber = Math.ceil((date.getDate()) / 7);
     const weekKey = weekNumber;
 
@@ -240,7 +241,7 @@ export function getMonthlyChartData(
   ];
 
   const yearTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getFullYear() === year;
   });
 
@@ -259,7 +260,7 @@ export function getMonthlyChartData(
   }
 
   yearTransactions.forEach((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     const monthIndex = date.getMonth();
 
     if (t.type === 'income') {

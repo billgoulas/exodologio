@@ -782,17 +782,17 @@ export default function SettingsScreen() {
         >
           <View
             style={{
-              backgroundColor: '#fff',
+              backgroundColor: colors.surface,
               borderRadius: 12,
               padding: 20,
               width: '80%',
               maxWidth: 300,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: colors.foreground }}>
               {t('common.confirm')}
             </Text>
-            <Text style={{ fontSize: 14, marginBottom: 20, color: '#666' }}>
+            <Text style={{ fontSize: 14, marginBottom: 20, color: colors.muted }}>
               {t('settings.deleteConfirm')}
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -804,12 +804,12 @@ export default function SettingsScreen() {
                     paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 8,
-                    backgroundColor: '#E5E7EB',
+                    backgroundColor: colors.border,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}
               >
-                <Text style={{ textAlign: 'center', fontWeight: '600' }}>
+                <Text style={{ textAlign: 'center', fontWeight: '600', color: colors.foreground }}>
                   {t('common.cancel')}
                 </Text>
               </Pressable>
@@ -821,7 +821,7 @@ export default function SettingsScreen() {
                     paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 8,
-                    backgroundColor: '#DC2626',
+                    backgroundColor: colors.error,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}

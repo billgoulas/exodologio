@@ -6,7 +6,7 @@ import { TransactionItem } from '@/components/transaction-item';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { Transaction } from '@/lib/types';
-import { getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName, formatCurrency } from '@/lib/utils-calc';
+import { getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName, formatCurrency, parseLocalDateString } from '@/lib/utils-calc';
 import { CustomDateRangePicker } from '@/components/custom-date-range-picker';
 import { CategoryFilter, CategoryFilterValue } from '@/components/category-filter';
 
@@ -111,7 +111,7 @@ export default function TransactionsScreen() {
     // Apply date range filter
     const { startDate, endDate } = getDateRange();
     filtered = filtered.filter((tx) => {
-      const txDate = new Date(tx.date);
+      const txDate = parseLocalDateString(tx.date);
       return txDate >= startDate && txDate <= endDate;
     });
 
@@ -133,7 +133,7 @@ export default function TransactionsScreen() {
     // Sort by transaction date first (most recent first), then by createdAt within same date
     return filtered.sort((a, b) => {
       // Primary sort: by transaction date (most recent first)
-      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      const dateDiff = parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime();
       if (dateDiff !== 0) return dateDiff;
       // Secondary sort: within same date, by createdAt (most recent modification first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

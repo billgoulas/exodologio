@@ -41,6 +41,15 @@ export function ThemeProvider({ children, themePreference = 'auto' }: ThemeProvi
     applyScheme(scheme);
   }, [applyScheme]);
 
+  // Apply the resolved scheme once on mount. State is already initialized to
+  // it, so the effect below (which only reacts to later *changes*) would
+  // otherwise never call applyScheme() and the initial paint would miss the
+  // nativewind/CSS variable updates it performs.
+  useEffect(() => {
+    applyScheme(colorScheme);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Update colorScheme when themePreference changes
   useEffect(() => {
     const newScheme = themePreference === 'auto' ? systemScheme : (themePreference as ColorScheme);

@@ -11,7 +11,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
 
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -103,8 +103,8 @@ export default function AddTransactionScreen() {
   const [installmentDescription, setInstallmentDescription] = useState(params.notes || '');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showInstallmentDatePicker, setShowInstallmentDatePicker] = useState(false);
-  const [pickerDate, setPickerDate] = useState(new Date(initDate));
-  const [installmentPickerDate, setInstallmentPickerDate] = useState(new Date(params.date || initDate));
+  const [pickerDate, setPickerDate] = useState(parseLocalDateString(initDate));
+  const [installmentPickerDate, setInstallmentPickerDate] = useState(parseLocalDateString(params.date || initDate));
 
   // Transfer-specific state
   const [transferFrom, setTransferFrom] = useState<PaymentMethod>(initTransferFrom as any);
@@ -113,7 +113,7 @@ export default function AddTransactionScreen() {
   // Update installment picker date when installment date changes
   useEffect(() => {
     if (type === 'installment') {
-      setInstallmentPickerDate(new Date(installmentDate));
+      setInstallmentPickerDate(parseLocalDateString(installmentDate));
     }
   }, [installmentDate, type]);
 
@@ -183,7 +183,7 @@ export default function AddTransactionScreen() {
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = amount.replace(decimalSeparator, '.');
 
-    if (!amount || parseFloat(standardAmount) <= 0) {
+    if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
       Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -234,7 +234,7 @@ export default function AddTransactionScreen() {
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = installmentAmount.replace(decimalSeparator, '.');
 
-    if (!installmentAmount || parseFloat(standardAmount) <= 0) {
+    if (!installmentAmount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
       Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -246,7 +246,7 @@ export default function AddTransactionScreen() {
 
     const remainingCount = parseInt(installmentCount) || 1;
     const totalCount = parseInt(installmentTotalCount) || 1;
-    const currentDate = new Date(installmentDate);
+    const currentDate = parseLocalDateString(installmentDate);
     const installmentId = generateId();
 
     for (let i = 0; i < remainingCount; i++) {

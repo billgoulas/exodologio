@@ -2,7 +2,7 @@ import { View, Text, Pressable } from 'react-native';
 import { useState } from 'react';
 import { useI18n } from '@/lib/i18n-context';
 import { useAppContext } from '@/lib/app-context';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, toLocalDateString } from '@/lib/utils-calc';
 import { CustomDatePickerModal } from './custom-date-picker-modal';
 
 interface CustomDateRangePickerProps {
@@ -44,14 +44,8 @@ export function CustomDateRangePicker({
   };
 
   const dateFormat = state.settings.dateFormat;
-  // Adjust for timezone offset to prevent off-by-one error
-  const getLocalDateString = (date: Date) => {
-    const offset = date.getTimezoneOffset();
-    const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
-    return adjustedDate.toISOString().split('T')[0];
-  };
-  const fromDateStr = fromDate ? formatDate(getLocalDateString(fromDate), dateFormat) : '-';
-  const toDateStr = toDate ? formatDate(getLocalDateString(toDate), dateFormat) : '-';
+  const fromDateStr = fromDate ? formatDate(toLocalDateString(fromDate), dateFormat) : '-';
+  const toDateStr = toDate ? formatDate(toLocalDateString(toDate), dateFormat) : '-';
 
   return (
     <View className="px-4 py-2 gap-2 bg-surface border-b border-border">

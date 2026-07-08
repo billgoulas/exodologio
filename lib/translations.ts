@@ -1,4 +1,5 @@
 import { Language } from './types';
+import { bankTranslations } from './translations/bank';
 
 type TranslationKeys = {
   [key: string]: string | TranslationKeys;
@@ -2719,6 +2720,30 @@ export const translations: Translations = {
     },
   },
 };
+
+// Bank connection strings previously existed only in Greek inline above;
+// lib/translations/bank.ts has the full 9-language set, so merge it into
+// `settings` for every language instead of hand-duplicating it here.
+const NOT_FOUND_TRANSLATIONS: Record<Language, { transaction: string; installment: string; editTitle: string }> = {
+  el: { transaction: 'Η συναλλαγή δεν βρέθηκε', installment: 'Η δόση δεν βρέθηκε', editTitle: 'Επεξεργασία Δόσης' },
+  en: { transaction: 'Transaction not found', installment: 'Installment not found', editTitle: 'Edit Installment' },
+  fr: { transaction: 'Transaction introuvable', installment: 'Acompte introuvable', editTitle: 'Modifier l’acompte' },
+  de: { transaction: 'Transaktion nicht gefunden', installment: 'Rate nicht gefunden', editTitle: 'Rate bearbeiten' },
+  it: { transaction: 'Transazione non trovata', installment: 'Rata non trovata', editTitle: 'Modifica rata' },
+  es: { transaction: 'Transacción no encontrada', installment: 'Cuota no encontrada', editTitle: 'Editar cuota' },
+  ru: { transaction: 'Транзакция не найдена', installment: 'Рассрочка не найдена', editTitle: 'Редактировать рассрочку' },
+  sq: { transaction: 'Transaksioni nuk u gjet', installment: 'Këst nuk u gjet', editTitle: 'Redakto këstin' },
+  bg: { transaction: 'Транзакцията не е намерена', installment: 'Вноската не е намерена', editTitle: 'Редактиране на вноска' },
+};
+
+(Object.keys(translations) as Language[]).forEach((lang) => {
+  Object.assign(translations[lang].settings, bankTranslations[lang] || bankTranslations.en);
+
+  const notFound = NOT_FOUND_TRANSLATIONS[lang] || NOT_FOUND_TRANSLATIONS.en;
+  (translations[lang].transaction as Record<string, string>).notFound = notFound.transaction;
+  (translations[lang].installment as Record<string, string>).notFound = notFound.installment;
+  (translations[lang].installment as Record<string, string>).editTitle = notFound.editTitle;
+});
 
 // Note: Adding root-level PIN translation keys for all remaining languages
 // These are used by PinVerificationModal component which uses flat i18n keys

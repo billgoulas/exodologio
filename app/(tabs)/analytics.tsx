@@ -4,7 +4,7 @@ import { ScreenContainer } from '@/components/screen-container';
 import { CustomDateRangePicker } from '@/components/custom-date-range-picker';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
-import { getMonthSummary, getCurrentMonthYear, formatNumber, getNextMonth, getPreviousMonth, getMonthName } from '@/lib/utils-calc';
+import { getMonthSummary, getCurrentMonthYear, formatNumber, getNextMonth, getPreviousMonth, getMonthName, parseLocalDateString } from '@/lib/utils-calc';
 import { useMemo, useState, useCallback } from 'react';
 import { CATEGORIES_MAP } from '@/lib/constants';
 
@@ -93,12 +93,12 @@ export default function AnalyticsScreen() {
     const { startDate, endDate } = getDateRange();
     return state.transactions
       .filter(tx => {
-        const txDate = new Date(tx.date);
+        const txDate = parseLocalDateString(tx.date);
         return txDate >= startDate && txDate <= endDate;
       })
       .sort((a, b) => {
         // Primary sort: by transaction date (most recent first)
-        const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        const dateDiff = parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         // Secondary sort: within same date, by createdAt (most recent modification first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -120,7 +120,7 @@ export default function AnalyticsScreen() {
       if (isInstallment) {
         if (dateRangeFilter === null) {
           // Only include installments with date <= today
-          const txDate = new Date(tx.date);
+          const txDate = parseLocalDateString(tx.date);
           const today = new Date();
           today.setHours(23, 59, 59, 999);
           if (txDate <= today) {

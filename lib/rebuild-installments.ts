@@ -1,4 +1,5 @@
 import { Transaction } from './types';
+import { parseLocalDateString } from './utils-calc';
 
 /**
  * Represents a summary of an installment plan derived directly from transactions.
@@ -44,8 +45,7 @@ export function buildInstallmentSummaries(transactions: Transaction[]): Installm
       return false;
     }
     // Only include transactions with date >= today
-    const txDate = new Date(t.date);
-    txDate.setHours(0, 0, 0, 0);
+    const txDate = parseLocalDateString(t.date);
     return txDate.getTime() >= today.getTime();
   });
 
@@ -72,12 +72,12 @@ export function buildInstallmentSummaries(transactions: Transaction[]): Installm
 
     // Sort by date ascending (oldest first)
     const sortedAsc = [...txs].sort((a, b) => {
-      return new Date(a.date).getTime() - new Date(b.date).getTime();
+      return parseLocalDateString(a.date).getTime() - parseLocalDateString(b.date).getTime();
     });
 
     // Sort by date descending (most recent first)
     const sortedDesc = [...txs].sort((a, b) => {
-      return new Date(b.date).getTime() - new Date(a.date).getTime();
+      return parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime();
     });
 
     const firstTx = sortedAsc[0];   // First transaction (closest to today, next payment)
@@ -117,8 +117,8 @@ export function buildInstallmentSummaries(transactions: Transaction[]): Installm
 
   // Step 7: Sort by nextPaymentDate ascending (closest to today first)
   summaries.sort((a, b) => {
-    const dateA = new Date(a.nextPaymentDate).getTime();
-    const dateB = new Date(b.nextPaymentDate).getTime();
+    const dateA = parseLocalDateString(a.nextPaymentDate).getTime();
+    const dateB = parseLocalDateString(b.nextPaymentDate).getTime();
     return dateA - dateB; // Ascending: closest to today first
   });
 

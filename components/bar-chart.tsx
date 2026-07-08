@@ -1,5 +1,5 @@
 import { View, Text, ScrollView } from 'react-native';
-import Svg, { Rect, Line, Text as SvgText, TSpan } from 'react-native-svg';
+import Svg, { Rect, Line, Text as SvgText, TSpan, G } from 'react-native-svg';
 import { DailyChartData, WeeklyChartData, MonthlyChartData } from '@/lib/charts-utils';
 import { formatNumber } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
@@ -107,7 +107,7 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
               const expenseHeight = maxValue > 0 ? (item.expense / maxValue) * chartHeight : 0;
 
               return (
-                <View key={index}>
+                <G key={index}>
                   {/* Income bar (bottom, green) */}
                   <Rect
                     x={x}
@@ -124,7 +124,7 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
                     height={expenseHeight}
                     fill="#EF4444"
                   />
-                </View>
+                </G>
               );
             })}
 

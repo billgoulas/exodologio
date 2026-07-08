@@ -81,14 +81,13 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         installments: action.payload,
       };
-    case 'SET_LANGUAGE': {
-      const { DEFAULT_CURRENCY_BY_LANGUAGE } = require('./constants');
-      const newCurrency = DEFAULT_CURRENCY_BY_LANGUAGE[action.payload] || 'EUR';
+    case 'SET_LANGUAGE':
+      // Changing the display language must not silently override a currency
+      // the user already chose in Settings — the two are independent settings.
       return {
         ...state,
-        settings: { ...state.settings, language: action.payload, currency: newCurrency },
+        settings: { ...state.settings, language: action.payload },
       };
-    }
     case 'SET_CURRENCY':
       return {
         ...state,

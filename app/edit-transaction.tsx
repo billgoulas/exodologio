@@ -11,7 +11,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
 
 // Generate UUID locally
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -82,8 +82,8 @@ export default function EditTransactionScreen() {
   const [installmentDescription, setInstallmentDescription] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showInstallmentDatePicker, setShowInstallmentDatePicker] = useState(false);
-  const [pickerDate, setPickerDate] = useState(new Date(initDate));
-  const [installmentPickerDate, setInstallmentPickerDate] = useState(new Date(initDate));
+  const [pickerDate, setPickerDate] = useState(parseLocalDateString(initDate));
+  const [installmentPickerDate, setInstallmentPickerDate] = useState(parseLocalDateString(initDate));
 
   // Transfer-specific state
   const [transferFrom, setTransferFrom] = useState<PaymentMethod>('bank_transfer');
@@ -114,7 +114,7 @@ export default function EditTransactionScreen() {
         setDate(transaction.date);
         setNotes(transaction.notes || '');
         setBank(transaction.bank || '');
-        setPickerDate(new Date(transaction.date));
+        setPickerDate(parseLocalDateString(transaction.date));
         setOriginalCreatedAt(transaction.createdAt);
         
         if (transaction.type === 'transfer') {
@@ -124,7 +124,7 @@ export default function EditTransactionScreen() {
           // Load installment data
           setInstallmentAmount(transaction.amount.toString());
           setInstallmentDate(transaction.date);
-          setInstallmentPickerDate(new Date(transaction.date));
+          setInstallmentPickerDate(parseLocalDateString(transaction.date));
           setInstallmentDescription(transaction.notes || '');
           setInstallmentPaymentMethod(transaction.installmentPaymentMethod || 'standing_order');
           if (transaction.remainingInstallments) setInstallmentCount(transaction.remainingInstallments.toString());
@@ -133,10 +133,15 @@ export default function EditTransactionScreen() {
         } else {
           setPaymentMethod(transaction.paymentMethod || 'credit_card');
         }
+      } else {
+        Alert.alert(t('common.error'), t('transaction.notFound') || 'Transaction not found');
+        router.back();
+        return;
       }
     }
     setIsLoading(false);
-  }, [id, state.transactions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   const categories = type === 'income' || type === 'expense' ? (type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES) : [];
   const currency = state.settings.currency;
@@ -204,7 +209,7 @@ export default function EditTransactionScreen() {
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = amount.replace(decimalSeparator, '.');
 
-    if (!amount || parseFloat(standardAmount) <= 0) {
+    if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
       Alert.alert(t('common.error'), t('transaction.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -286,7 +291,7 @@ export default function EditTransactionScreen() {
     const decimalSeparator = language === 'el' ? ',' : '.';
     const standardAmount = installmentAmount.replace(decimalSeparator, '.');
 
-    if (!installmentAmount || parseFloat(standardAmount) <= 0) {
+    if (!installmentAmount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
       Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
       return;
     }
@@ -317,7 +322,7 @@ export default function EditTransactionScreen() {
       // Create new transactions with updated data
       const remainingCount = parseInt(installmentCount);
       const totalCountValue = parseInt(installmentTotalCount || installmentCount);
-      const currentDate = new Date(installmentDate);
+      const currentDate = parseLocalDateString(installmentDate);
       
       // Map InstallmentPaymentMethod to PaymentMethod
       const paymentMethodMap: Record<string, any> = {

@@ -1,16 +1,15 @@
-import { View, Text, Pressable, ScrollView, FlatList } from 'react-native';
+import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Platform } from 'react-native';
 import { ScreenContainer } from '@/components/screen-container';
 import { SummaryCard } from '@/components/summary-card';
-import { TransactionItem } from '@/components/transaction-item';
 import { CustomDateRangePicker } from '@/components/custom-date-range-picker';
 import { CategoryFilter, CategoryFilterValue } from '@/components/category-filter';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
-import { getMonthSummary, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName } from '@/lib/utils-calc';
+import { getMonthSummary, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName, parseLocalDateString } from '@/lib/utils-calc';
 import { PAYMENT_METHODS } from '@/lib/constants';
 
 type DateRangeFilter = 'day' | 'twodays' | 'threedays' | 'week' | 'twoweeks' | 'month' | '3months' | '6months' | 'year' | 'all' | null;
@@ -61,8 +60,6 @@ export default function HomeScreen() {
   const [customFromDate, setCustomFromDate] = useState<Date | null>(null);
   const [customToDate, setCustomToDate] = useState<Date | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>(null);
-  const lastPressRef = useRef<{ id: string; time: number } | null>(null);
-  const DOUBLE_TAP_DELAY = 300; // milliseconds
 
   // Calculate date range based on filter
   const getDateRange = useCallback(() => {
@@ -132,7 +129,7 @@ export default function HomeScreen() {
     const { startDate, endDate } = getDateRange();
     return state.transactions
       .filter(tx => {
-        const txDate = new Date(tx.date);
+        const txDate = parseLocalDateString(tx.date);
         if (txDate < startDate || txDate > endDate) return false;
         // Category filter: check category id or payment method (prefixed with pm_)
         if (categoryFilter !== null && categoryFilter.length > 0) {
@@ -150,7 +147,7 @@ export default function HomeScreen() {
       })
       .sort((a, b) => {
         // Primary sort: by transaction date (most recent first)
-        const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+        const dateDiff = parseLocalDateString(b.date).getTime() - parseLocalDateString(a.date).getTime();
         if (dateDiff !== 0) return dateDiff;
         // Secondary sort: within same date, by createdAt (most recent modification first)
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -226,10 +223,6 @@ export default function HomeScreen() {
     return totals;
   }, [filteredTransactions]);
 
-  const recentTransactions = useMemo(() => {
-    return filteredTransactions.slice(0, 20);
-  }, [filteredTransactions]);
-
   const handlePreviousMonth = () => {
     // Only allow month navigation when no quick-filter button is active
     if (dateRangeFilter === null) {
@@ -260,21 +253,6 @@ export default function HomeScreen() {
   const handleCloseModal = () => {
     setShowAddModal(false);
   };
-
-  const handleTransactionPress = useCallback((transactionId: string) => {
-    const now = Date.now();
-    const lastPress = lastPressRef.current;
-
-    if (lastPress && lastPress.id === transactionId && now - lastPress.time < DOUBLE_TAP_DELAY) {
-      // Double tap detected - navigate to edit screen
-      console.log('Double tap detected for transaction:', transactionId);
-      lastPressRef.current = null;
-      router.push(`/edit-transaction?id=${transactionId}`);
-    } else {
-      // Single tap - update the ref
-      lastPressRef.current = { id: transactionId, time: now };
-    }
-  }, [router]);
 
   const rangeOptions: RangeOption[] = [
     { value: 'day', label: t('home.oneDay') || '1 Μέρα' },

@@ -32,13 +32,13 @@ export const EXPENSE_CATEGORIES: CategoryInfo[] = [
   { id: 'tolls', label: 'Διόδια', icon: '🛣️', type: 'expense' },
   { id: 'rent', label: 'Ενοίκιο', icon: '🏠', type: 'expense' },
   { id: 'loan', label: 'Δάνειο', icon: '💳', type: 'expense' },
-  { id: 'repair', label: 'Επισκευή', icon: '🔧', type: 'expense' },
+  { id: 'repair', label: 'Επισκευή', icon: '🛠️', type: 'expense' },
   { id: 'health', label: 'Υγεία', icon: '🏥', type: 'expense' },
   { id: 'borrowed', label: 'Δανεικά', icon: '📤', type: 'expense' },
   { id: 'investment', label: 'Επένδυση', icon: '📈', type: 'expense' },
   { id: 'gift', label: 'Δώρο', icon: '🎀', type: 'expense' },
   { id: 'transport', label: 'Μεταφορά', icon: '🚗', type: 'expense' },
-  { id: 'services', label: 'Υπηρεσία', icon: '🔧', type: 'expense' },
+  { id: 'services', label: 'Υπηρεσία', icon: '🧰', type: 'expense' },
   { id: 'other_expense', label: 'Άλλο', icon: '🔔', type: 'expense' },
 ];
 
@@ -51,12 +51,12 @@ export interface PaymentMethodInfo {
 export const PAYMENT_METHODS: PaymentMethodInfo[] = [
   { id: 'credit_card', label: 'Πιστωτική Κάρτα', icon: '💰' },
   { id: 'debit_card', label: 'Χρεωστική Κάρτα', icon: '🏧' },
-  { id: 'toll_card', label: 'Κάρτα Διοδίων', icon: '🛣️' },
+  { id: 'toll_card', label: 'Κάρτα Διοδίων', icon: '🪪' },
   { id: 'iris', label: 'Iris', icon: '🔐' },
   { id: 'gift_card', label: 'Δωροκάρτα', icon: '🎟️' },
   { id: 'cash', label: 'Μετρητά', icon: '💵' },
   { id: 'bank_transfer', label: 'Τραπεζικός Λογαριασμός', icon: '🏦' },
-  { id: 'investment_account', label: 'Επενδυτικός Λογαριασμός', icon: '💼' },
+  { id: 'investment_account', label: 'Επενδυτικός Λογαριασμός', icon: '📊' },
   { id: 'rewards', label: 'Χρήματα Επιβραβεύσεων', icon: '⭐' },
 ];
 

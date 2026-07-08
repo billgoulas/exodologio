@@ -9,7 +9,7 @@ import { generateId } from '@/lib/utils-calc';
 import { Transaction } from '@/lib/types';
 import { useI18n } from '@/lib/i18n-context';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, parseLocalDateString } from '@/lib/utils-calc';
 import { buildInstallmentSummaries } from '@/lib/rebuild-installments';
 import { useColors } from '@/hooks/use-colors';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
@@ -70,7 +70,7 @@ export default function EditInstallmentScreen() {
         setPaymentMethod((summary.paymentMethod as any) || 'standing_order');
         setDescription(summary.description || '');
         setOriginalCreatedAt(summary.nextPaymentDate);
-        setPickerDate(new Date(summary.nextPaymentDate));
+        setPickerDate(parseLocalDateString(summary.nextPaymentDate));
       } else {
         Alert.alert(t('common.error'), t('installment.notFound') || 'Installment not found');
         router.back();
@@ -109,13 +109,13 @@ export default function EditInstallmentScreen() {
     const decimalSeparator = lang === 'el' ? ',' : '.';
     const standardAmount = amount.replace(decimalSeparator, '.');
 
-    if (!amount || parseFloat(standardAmount) <= 0) {
-      Alert.alert(t('common.error'), t('common.invalidAmount') || 'Please enter a valid amount');
+    if (!amount || Number.isNaN(parseFloat(standardAmount)) || parseFloat(standardAmount) <= 0) {
+      Alert.alert(t('common.error'), t('installment.invalidAmount') || 'Please enter a valid amount');
       return;
     }
 
-    if (!count || parseInt(count) <= 0) {
-      Alert.alert(t('common.error'), t('common.invalidCount') || 'Please enter a valid count');
+    if (!count || Number.isNaN(parseInt(count)) || parseInt(count) <= 0) {
+      Alert.alert(t('common.error'), t('installment.invalidCount') || 'Please enter a valid count');
       return;
     }
 
@@ -129,7 +129,7 @@ export default function EditInstallmentScreen() {
       // Create new transactions with updated data
       const remainingCount = parseInt(count);
       const totalCountValue = parseInt(totalCount || count);
-      const currentDate = new Date(installmentDate);
+      const currentDate = parseLocalDateString(installmentDate);
       // Preserve the original creator's username
       const username = oldTransactions[0]?.username || 'Unknown';
       
