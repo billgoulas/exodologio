@@ -7,6 +7,21 @@ import { translations } from '@/lib/translations';
 
 type ChartData = DailyChartData | WeeklyChartData | MonthlyChartData;
 
+const MONTH_KEY_TO_FULL_NAME: Record<string, string> = {
+  jan: 'january',
+  feb: 'february',
+  mar: 'march',
+  apr: 'april',
+  may: 'may',
+  jun: 'june',
+  jul: 'july',
+  aug: 'august',
+  sep: 'september',
+  oct: 'october',
+  nov: 'november',
+  dec: 'december',
+};
+
 interface BarChartProps {
   data: ChartData[];
   title: string;
@@ -173,9 +188,9 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
             } else if (type === 'monthly') {
               const monthName = (item as MonthlyChartData).month;
               const monthKey = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].find(
-                (k, i) => monthName.toLowerCase().startsWith(k)
+                (k) => monthName.toLowerCase().startsWith(k)
               );
-              displayLabel = monthKey ? t(`analytics.${monthKey}uary`) || t(`analytics.${monthKey}`) || monthName : monthName;
+              displayLabel = monthKey ? t(`analytics.${MONTH_KEY_TO_FULL_NAME[monthKey]}`) : monthName;
             }
             return (
               <View key={index} className="mb-3 pb-3 border-b border-border">
