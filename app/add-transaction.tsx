@@ -1,13 +1,12 @@
-import { ScrollView, View, Text, Pressable, TextInput, Alert, Modal, Platform } from 'react-native';
+import { ScrollView, View, Text, Pressable, TextInput, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PlatformDatePicker } from '@/components/platform-date-picker';
+import { CustomDatePickerModal } from '@/components/custom-date-picker-modal';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useUser } from '@/lib/user-context';
-import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useColors } from '@/hooks/use-colors';
 import { INCOME_CATEGORIES, EXPENSE_CATEGORIES, CURRENCY_SYMBOLS, PAYMENT_METHODS } from '@/lib/constants';
 import { Transaction, PaymentMethod, Installment } from '@/lib/types';
@@ -50,18 +49,8 @@ export default function AddTransactionScreen() {
   }>();
   const { addTransaction, state } = useAppContext();
   const { t, language } = useI18n();
-
-  // Map app language to locale code for DatePicker (en-GB enforces DD/MM/YYYY)
-  const datePickerLocale = {
-    el: 'el-GR', en: 'en-GB', fr: 'fr-FR', de: 'de-DE',
-    it: 'it-IT', es: 'es-ES', ru: 'ru-RU', sq: 'sq-AL', bg: 'bg-BG',
-  }[language] ?? 'en-GB';
   const { username } = useUser();
   const insets = useSafeAreaInsets();
-  const systemColorScheme = useSystemColorScheme() ?? 'light';
-  // Use app settings theme directly so textColor is correct immediately on theme change
-  const effectiveColorScheme =
-    state.settings.theme === 'auto' ? systemColorScheme : state.settings.theme;
   const colors = useColors();
 
   // Determine initial values: from duplicate params or defaults
@@ -842,107 +831,21 @@ export default function AddTransactionScreen() {
         </View>
       </ScrollView>
 
-      {/* Date Picker Modal */}
-      <Modal
+      <CustomDatePickerModal
         visible={showDatePicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-background rounded-2xl p-4 w-11/12 max-w-sm" style={{ paddingBottom: Math.max(insets.bottom, 16) + 16 }}>
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-semibold text-foreground">
-                {t('transaction.date')}
-              </Text>
-              <Pressable
-                onPress={() => setShowDatePicker(false)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-2xl text-foreground">✕</Text>
-              </Pressable>
-            </View>
-            <PlatformDatePicker
-              date={pickerDate}
-              onDateChange={setPickerDate}
-              locale={datePickerLocale}
-              textColor={colors.foreground}
-              backgroundColor={effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF'}
-            />
-            <View className="flex-row gap-3 mt-4">
-              <Pressable
-                onPress={() => setShowDatePicker(false)}
-                className="flex-1 py-3 rounded-lg bg-border"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-foreground">
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleDatePickerConfirm(pickerDate)}
-                className="flex-1 py-3 rounded-lg bg-primary"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-background">
-                  {t('common.confirm')}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        initialDate={pickerDate}
+        onDateSelect={handleDatePickerConfirm}
+        onCancel={() => setShowDatePicker(false)}
+        title={t('transaction.date')}
+      />
 
-      {/* Installment Date Picker Modal */}
-      <Modal
+      <CustomDatePickerModal
         visible={showInstallmentDatePicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowInstallmentDatePicker(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-background rounded-2xl p-4 w-11/12 max-w-sm" style={{ paddingBottom: Math.max(insets.bottom, 16) + 16 }}>
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-semibold text-foreground">
-                {t('installment.dateRange')}
-              </Text>
-              <Pressable
-                onPress={() => setShowInstallmentDatePicker(false)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-2xl text-foreground">✕</Text>
-              </Pressable>
-            </View>
-            <PlatformDatePicker
-              date={installmentPickerDate}
-              onDateChange={setInstallmentPickerDate}
-              locale={datePickerLocale}
-              textColor={colors.foreground}
-              backgroundColor={effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF'}
-            />
-            <View className="flex-row gap-3 mt-4">
-              <Pressable
-                onPress={() => setShowInstallmentDatePicker(false)}
-                className="flex-1 py-3 rounded-lg bg-border"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-foreground">
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleInstallmentDatePickerConfirm(installmentPickerDate)}
-                className="flex-1 py-3 rounded-lg bg-primary"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-background">
-                  {t('common.confirm')}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        initialDate={installmentPickerDate}
+        onDateSelect={handleInstallmentDatePickerConfirm}
+        onCancel={() => setShowInstallmentDatePicker(false)}
+        title={t('installment.dateRange')}
+      />
 
     </ScreenContainer>
   );

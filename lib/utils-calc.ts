@@ -17,6 +17,41 @@ const LANGUAGE_TO_LOCALE: Record<Language, string> = {
 };
 
 /**
+ * Per-language letters used to spell out a date format pattern (e.g. Greek
+ * shows ΗΗ-ΜΜ-ΕΕΕΕ, not the English DD-MM-YYYY) — Settings' date format
+ * picker used to show every DATE_FORMATS code in English regardless of the
+ * selected language.
+ */
+const DATE_FORMAT_LETTERS: Record<Language, { day: string; month: string; year4: string; year2: string }> = {
+  el: { day: 'ΗΗ', month: 'ΜΜ', year4: 'ΕΕΕΕ', year2: 'ΕΕ' },
+  en: { day: 'DD', month: 'MM', year4: 'YYYY', year2: 'YY' },
+  fr: { day: 'JJ', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  de: { day: 'TT', month: 'MM', year4: 'JJJJ', year2: 'JJ' },
+  it: { day: 'GG', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  es: { day: 'DD', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  ru: { day: 'ДД', month: 'ММ', year4: 'ГГГГ', year2: 'ГГ' },
+  sq: { day: 'DD', month: 'MM', year4: 'VVVV', year2: 'VV' },
+  bg: { day: 'ДД', month: 'ММ', year4: 'ГГГГ', year2: 'ГГ' },
+};
+
+/**
+ * Render a DateFormat code (e.g. 'DD-MM-YYYY') using the selected language's
+ * own letters (e.g. 'ΗΗ-ΜΜ-ΕΕΕΕ' for Greek) instead of always English.
+ */
+export function getLocalizedDateFormatLabel(code: DateFormat, language: Language): string {
+  const letters = DATE_FORMAT_LETTERS[language] || DATE_FORMAT_LETTERS.en;
+  return code.replace(/YYYY|YY|MM|DD/g, (token) => {
+    switch (token) {
+      case 'YYYY': return letters.year4;
+      case 'YY': return letters.year2;
+      case 'MM': return letters.month;
+      case 'DD': return letters.day;
+      default: return token;
+    }
+  });
+}
+
+/**
  * Parse a 'YYYY-MM-DD' date-only string as a local calendar date (midnight
  * local time). `new Date('YYYY-MM-DD')` parses as UTC midnight, which then
  * shifts by a day when read back with local getters (getDate/getMonth/

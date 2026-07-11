@@ -1,8 +1,8 @@
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { Alert, View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
+import { Alert, View, Text, Pressable, ScrollView, TextInput } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { PlatformDatePicker } from '@/components/platform-date-picker';
+import { CustomDatePickerModal } from '@/components/custom-date-picker-modal';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
 import { generateId } from '@/lib/utils-calc';
@@ -12,7 +12,6 @@ import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { formatDate, parseLocalDateString, toLocalDateString, addMonthsClamped } from '@/lib/utils-calc';
 import { buildInstallmentSummaries } from '@/lib/rebuild-installments';
 import { useColors } from '@/hooks/use-colors';
-import { useColorScheme as useSystemColorScheme } from 'react-native';
 
 const escapeRegExp = (ch: string) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -20,18 +19,9 @@ export default function EditInstallmentScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { state, addTransaction, deleteTransaction } = useAppContext();
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const systemColorScheme = useSystemColorScheme() ?? 'light';
-  const effectiveColorScheme =
-    state.settings.theme === 'auto' ? systemColorScheme : state.settings.theme;
-
-  // Map app language to locale code for DatePicker
-  const datePickerLocale = {
-    el: 'el-GR', en: 'en-GB', fr: 'fr-FR', de: 'de-DE',
-    it: 'it-IT', es: 'es-ES', ru: 'ru-RU', sq: 'sq-AL', bg: 'bg-BG',
-  }[language] ?? 'en-GB';
 
   const [amount, setAmount] = useState('');
   const [count, setCount] = useState('');
@@ -429,55 +419,13 @@ export default function EditInstallmentScreen() {
         {/* Old Cancel button removed - now integrated above */}
       </View>
 
-      {/* Date Picker Modal */}
-      <Modal
+      <CustomDatePickerModal
         visible={showDatePicker}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={() => setShowDatePicker(false)}
-      >
-        <View className="flex-1 bg-black/50 justify-center items-center">
-          <View className="bg-background rounded-2xl p-4 w-11/12 max-w-sm" style={{ paddingBottom: Math.max(insets.bottom, 16) + 16 }}>
-            <View className="flex-row items-center justify-between mb-4">
-              <Text className="text-lg font-semibold text-foreground">
-                {t('installment.dateRange')}
-              </Text>
-              <Pressable
-                onPress={() => setShowDatePicker(false)}
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-2xl text-foreground">✕</Text>
-              </Pressable>
-            </View>
-            <PlatformDatePicker
-              date={pickerDate}
-              onDateChange={setPickerDate}
-              locale={datePickerLocale}
-              textColor={colors.foreground}
-            />
-            <View className="flex-row gap-3 mt-4">
-              <Pressable
-                onPress={() => setShowDatePicker(false)}
-                className="flex-1 py-3 rounded-lg bg-border"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-foreground">
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                onPress={() => handleDatePickerConfirm(pickerDate)}
-                className="flex-1 py-3 rounded-lg bg-primary"
-                style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
-              >
-                <Text className="text-center font-semibold text-background">
-                  {t('common.confirm')}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+        initialDate={pickerDate}
+        onDateSelect={handleDatePickerConfirm}
+        onCancel={() => setShowDatePicker(false)}
+        title={t('installment.dateRange')}
+      />
     </ScreenContainer>
   );
 }

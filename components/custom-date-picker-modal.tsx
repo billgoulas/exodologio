@@ -6,6 +6,7 @@ import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Language } from '@/lib/types';
 import { PlatformDatePicker } from '@/components/platform-date-picker';
+import { useColors } from '@/hooks/use-colors';
 
 interface CustomDatePickerModalProps {
   visible: boolean;
@@ -28,6 +29,7 @@ export function CustomDatePickerModal({
 }: CustomDatePickerModalProps) {
   const { t, language } = useI18n();
   const { state } = useAppContext();
+  const colors = useColors();
   const systemColorScheme = useSystemColorScheme() ?? 'light';
   // Derive the effective color scheme from app settings (not just system)
   // This ensures the date picker text color is correct immediately when the
@@ -104,22 +106,41 @@ export function CustomDatePickerModal({
             textColor={effectiveColorScheme === 'dark' ? '#FFFFFF' : '#000000'}
           />
 
-          <View className="flex-row gap-3 mt-4">
+          {/* Inline styles here (not className) — on web, NativeWind doesn't apply
+              utility classes to Pressables nested inside a React Native <Modal>
+              (the Modal portals its content elsewhere in the DOM), so these
+              buttons rendered as unstyled plain text in the browser preview.
+              The real mobile app renders <Modal> natively and isn't affected. */}
+          <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
             <Pressable
               onPress={onCancel}
-              className="flex-1 py-3 rounded-lg bg-border"
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              style={({ pressed }) => [
+                {
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 8,
+                  backgroundColor: colors.border,
+                  opacity: pressed ? 0.6 : 1,
+                },
+              ]}
             >
-              <Text className="text-center font-semibold text-foreground">
+              <Text style={{ textAlign: 'center', fontWeight: '600', color: colors.foreground }}>
                 {t('common.cancel')}
               </Text>
             </Pressable>
             <Pressable
               onPress={handleConfirm}
-              className="flex-1 py-3 rounded-lg bg-primary"
-              style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+              style={({ pressed }) => [
+                {
+                  flex: 1,
+                  paddingVertical: 12,
+                  borderRadius: 8,
+                  backgroundColor: colors.primary,
+                  opacity: pressed ? 0.6 : 1,
+                },
+              ]}
             >
-              <Text className="text-center font-semibold text-background">
+              <Text style={{ textAlign: 'center', fontWeight: '600', color: colors.background }}>
                 {t('common.confirm')}
               </Text>
             </Pressable>

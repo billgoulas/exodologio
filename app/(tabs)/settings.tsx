@@ -8,7 +8,7 @@ import { PinVerificationModal } from '@/components/pin-verification-modal';
 import { BankConnectionSection } from '@/components/bank-connection-section';
 import { LANGUAGES, CURRENCIES, DATE_FORMATS } from '@/lib/constants';
 import { Language, Currency, DateFormat, Theme } from '@/lib/types';
-import { formatDate } from '@/lib/utils-calc';
+import { formatDate, getLocalizedDateFormatLabel } from '@/lib/utils-calc';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -672,7 +672,7 @@ export default function SettingsScreen() {
             {t('settings.dateFormat')}
           </Text>
           {renderButtonGroup(
-            DATE_FORMATS.map((d) => ({ code: d.code, label: d.label })),
+            DATE_FORMATS.map((d) => ({ code: d.code, label: getLocalizedDateFormatLabel(d.code, state.settings.language) })),
             state.settings.dateFormat,
             (code) => setDateFormat(code as DateFormat)
           )}

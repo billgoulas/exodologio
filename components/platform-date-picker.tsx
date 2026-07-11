@@ -1,4 +1,4 @@
-import { Platform } from 'react-native';
+import { Platform, View } from 'react-native';
 import DatePicker from 'react-native-date-picker';
 import { toLocalDateString, parseLocalDateString } from '@/lib/utils-calc';
 
@@ -30,28 +30,37 @@ export function PlatformDatePicker({
   if (Platform.OS === 'web') {
     const isDark = textColor === '#FFFFFF';
     return (
-      <input
-        type="date"
-        value={toLocalDateString(date)}
-        min={minimumDate ? toLocalDateString(minimumDate) : undefined}
-        max={maximumDate ? toLocalDateString(maximumDate) : undefined}
-        onChange={(e) => {
-          if (e.target.value) {
-            onDateChange(parseLocalDateString(e.target.value));
-          }
-        }}
-        style={{
-          width: '100%',
-          padding: 12,
-          fontSize: 16,
-          borderRadius: 8,
-          border: '1px solid',
-          borderColor: isDark ? '#334155' : '#E5E7EB',
-          backgroundColor: backgroundColor ?? (isDark ? '#1e2022' : '#f5f5f5'),
-          color: textColor ?? '#11181C',
-          colorScheme: isDark ? 'dark' : 'light',
-        }}
-      />
+      // A raw DOM <input> as a direct sibling of other JSX confuses NativeWind's
+      // className processing for the elements that follow it (they silently lose
+      // their styling). Isolating it in its own View keeps the rest of the tree
+      // unaffected.
+      <View>
+        <input
+          type="date"
+          lang={locale}
+          value={toLocalDateString(date)}
+          min={minimumDate ? toLocalDateString(minimumDate) : undefined}
+          max={maximumDate ? toLocalDateString(maximumDate) : undefined}
+          onChange={(e) => {
+            if (e.target.value) {
+              onDateChange(parseLocalDateString(e.target.value));
+            }
+          }}
+          style={{
+            display: 'block',
+            boxSizing: 'border-box',
+            width: '100%',
+            padding: 12,
+            fontSize: 16,
+            borderRadius: 8,
+            border: '1px solid',
+            borderColor: isDark ? '#334155' : '#E5E7EB',
+            backgroundColor: backgroundColor ?? (isDark ? '#1e2022' : '#f5f5f5'),
+            color: textColor ?? '#11181C',
+            colorScheme: isDark ? 'dark' : 'light',
+          }}
+        />
+      </View>
     );
   }
 
