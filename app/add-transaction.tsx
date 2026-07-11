@@ -2,7 +2,7 @@ import { ScrollView, View, Text, Pressable, TextInput, Alert, Modal, Platform } 
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DatePicker from 'react-native-date-picker';
+import { PlatformDatePicker } from '@/components/platform-date-picker';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
@@ -862,15 +862,12 @@ export default function AddTransactionScreen() {
                 <Text className="text-2xl text-foreground">✕</Text>
               </Pressable>
             </View>
-            <DatePicker
+            <PlatformDatePicker
               date={pickerDate}
               onDateChange={setPickerDate}
-              mode="date"
               locale={datePickerLocale}
-              {...({
-                textColor: colors.foreground,
-                backgroundColor: effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF',
-              } as any)}
+              textColor={colors.foreground}
+              backgroundColor={effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF'}
             />
             <View className="flex-row gap-3 mt-4">
               <Pressable
@@ -916,15 +913,12 @@ export default function AddTransactionScreen() {
                 <Text className="text-2xl text-foreground">✕</Text>
               </Pressable>
             </View>
-            <DatePicker
+            <PlatformDatePicker
               date={installmentPickerDate}
               onDateChange={setInstallmentPickerDate}
-              mode="date"
               locale={datePickerLocale}
-              {...({
-                textColor: colors.foreground,
-                backgroundColor: effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF',
-              } as any)}
+              textColor={colors.foreground}
+              backgroundColor={effectiveColorScheme === 'dark' ? '#151718' : '#FFFFFF'}
             />
             <View className="flex-row gap-3 mt-4">
               <Pressable

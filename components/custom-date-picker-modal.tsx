@@ -1,11 +1,11 @@
 import { View, Text, Pressable, Modal } from 'react-native';
 import { useState, useEffect } from 'react';
-import DatePicker from 'react-native-date-picker';
 import { useI18n } from '@/lib/i18n-context';
 import { useAppContext } from '@/lib/app-context';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Language } from '@/lib/types';
+import { PlatformDatePicker } from '@/components/platform-date-picker';
 
 interface CustomDatePickerModalProps {
   visible: boolean;
@@ -95,14 +95,13 @@ export function CustomDatePickerModal({
             </Pressable>
           </View>
 
-          <DatePicker
+          <PlatformDatePicker
             date={pickerDate}
             onDateChange={setPickerDate}
-            mode="date"
             minimumDate={minDate}
             maximumDate={maxDate}
             locale={getLocaleCode(language)}
-            {...({ textColor: effectiveColorScheme === 'dark' ? '#FFFFFF' : '#000000' } as any)}
+            textColor={effectiveColorScheme === 'dark' ? '#FFFFFF' : '#000000'}
           />
 
           <View className="flex-row gap-3 mt-4">

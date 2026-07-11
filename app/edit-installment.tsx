@@ -2,7 +2,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { Alert, View, Text, Pressable, ScrollView, TextInput, Modal } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import DatePicker from 'react-native-date-picker';
+import { PlatformDatePicker } from '@/components/platform-date-picker';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
 import { generateId } from '@/lib/utils-calc';
@@ -449,12 +449,11 @@ export default function EditInstallmentScreen() {
                 <Text className="text-2xl text-foreground">✕</Text>
               </Pressable>
             </View>
-            <DatePicker
+            <PlatformDatePicker
               date={pickerDate}
               onDateChange={setPickerDate}
-              mode="date"
               locale={datePickerLocale}
-              {...({ textColor: colors.foreground } as any)}
+              textColor={colors.foreground}
             />
             <View className="flex-row gap-3 mt-4">
               <Pressable
