@@ -486,7 +486,11 @@ export default function HomeScreen() {
         {/* FAB row - sits between ScrollView and tab bar, never scrolls */}
         <View
           style={{
-            height: Platform.OS === 'web' ? 35 : Math.max(Math.floor((insets.bottom + 80) / 2), 40),
+            // Web previously used 35px here, shorter than the 56px button
+            // itself — the button's bottom ~10px rendered underneath the tab
+            // bar and got visually clipped there. Native isn't affected (its
+            // own height, from insets.bottom, already clears the button).
+            height: Platform.OS === 'web' ? 80 : Math.max(Math.floor((insets.bottom + 80) / 2), 40),
             alignItems: 'center',
             justifyContent: 'center',
           }}
