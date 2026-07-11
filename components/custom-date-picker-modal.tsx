@@ -104,6 +104,7 @@ export function CustomDatePickerModal({
             maximumDate={maxDate}
             locale={getLocaleCode(language)}
             textColor={effectiveColorScheme === 'dark' ? '#FFFFFF' : '#000000'}
+            dateFormat={state.settings.dateFormat}
           />
 
           {/* Inline styles here (not className) — on web, NativeWind doesn't apply
