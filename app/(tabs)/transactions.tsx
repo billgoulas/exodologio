@@ -1,4 +1,4 @@
-import { View, Text, Pressable, FlatList, Alert, ScrollView } from 'react-native';
+import { View, Text, Pressable, FlatList, Alert, ScrollView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMemo, useState, useRef, useCallback } from 'react';
 import { ScreenContainer } from '@/components/screen-container';
@@ -30,7 +30,11 @@ export default function TransactionsScreen() {
   const [customToDate, setCustomToDate] = useState<Date | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilterValue>(null);
   const lastPressRef = useRef<{ id: string; time: number } | null>(null);
-  const DOUBLE_TAP_DELAY = 300; // milliseconds
+  // Mouse double-clicking in a browser is slower/less precise than a
+  // touchscreen double-tap (plus web has extra event-dispatch overhead), so
+  // 300ms — tuned for native — felt like it needed a near-impossibly fast
+  // click there. Native keeps its original, already-working timing.
+  const DOUBLE_TAP_DELAY = Platform.OS === 'web' ? 500 : 300; // milliseconds
 
   // Calculate date range based on filter
   const getDateRange = useCallback(() => {
@@ -165,7 +169,6 @@ export default function TransactionsScreen() {
     const lastPress = lastPressRef.current;
     if (lastPress && lastPress.id === transactionId && now - lastPress.time < DOUBLE_TAP_DELAY) {
       // Double tap detected - navigate to edit screen
-      console.log('Double tap detected for transaction:', transactionId);
       lastPressRef.current = null;
       router.push(`/edit-transaction?id=${transactionId}`);
     } else {
