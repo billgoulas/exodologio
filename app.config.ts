@@ -72,6 +72,12 @@ const config: ExpoConfig = {
   },
   updates: {
     url: "https://u.expo.dev/c527fdde-09e1-4fd8-b027-3617d6bc39f3",
+    // eas build injects the channel automatically from eas.json. Builds made
+    // locally (e.g. via Android Studio / gradlew) bypass that, so the
+    // channel has to be set explicitly here for OTA updates to resolve.
+    requestHeaders: {
+      "expo-channel-name": "production",
+    },
   },
   extra: {
     eas: {
