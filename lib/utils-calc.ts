@@ -1,4 +1,4 @@
-import { Transaction, TransactionsByCategory, MonthSummary, DateFormat, Currency, Language } from './types';
+import { Transaction, TransactionsByCategory, MonthSummary, DateFormat, Currency, Language, Category } from './types';
 import { CATEGORIES_MAP } from './constants';
 
 /**
@@ -17,6 +17,78 @@ const LANGUAGE_TO_LOCALE: Record<Language, string> = {
 };
 
 /**
+ * Per-language letters used to spell out a date format pattern (e.g. Greek
+ * shows ΗΗ-ΜΜ-ΕΕΕΕ, not the English DD-MM-YYYY) — Settings' date format
+ * picker used to show every DATE_FORMATS code in English regardless of the
+ * selected language.
+ */
+const DATE_FORMAT_LETTERS: Record<Language, { day: string; month: string; year4: string; year2: string }> = {
+  el: { day: 'ΗΗ', month: 'ΜΜ', year4: 'ΕΕΕΕ', year2: 'ΕΕ' },
+  en: { day: 'DD', month: 'MM', year4: 'YYYY', year2: 'YY' },
+  fr: { day: 'JJ', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  de: { day: 'TT', month: 'MM', year4: 'JJJJ', year2: 'JJ' },
+  it: { day: 'GG', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  es: { day: 'DD', month: 'MM', year4: 'AAAA', year2: 'AA' },
+  ru: { day: 'ДД', month: 'ММ', year4: 'ГГГГ', year2: 'ГГ' },
+  sq: { day: 'DD', month: 'MM', year4: 'VVVV', year2: 'VV' },
+  bg: { day: 'ДД', month: 'ММ', year4: 'ГГГГ', year2: 'ГГ' },
+};
+
+/**
+ * Render a DateFormat code (e.g. 'DD-MM-YYYY') using the selected language's
+ * own letters (e.g. 'ΗΗ-ΜΜ-ΕΕΕΕ' for Greek) instead of always English.
+ */
+export function getLocalizedDateFormatLabel(code: DateFormat, language: Language): string {
+  const letters = DATE_FORMAT_LETTERS[language] || DATE_FORMAT_LETTERS.en;
+  return code.replace(/YYYY|YY|MM|DD/g, (token) => {
+    switch (token) {
+      case 'YYYY': return letters.year4;
+      case 'YY': return letters.year2;
+      case 'MM': return letters.month;
+      case 'DD': return letters.day;
+      default: return token;
+    }
+  });
+}
+
+/**
+ * Parse a 'YYYY-MM-DD' date-only string as a local calendar date (midnight
+ * local time). `new Date('YYYY-MM-DD')` parses as UTC midnight, which then
+ * shifts by a day when read back with local getters (getDate/getMonth/
+ * getFullYear) in timezones west of UTC — this avoids that entirely.
+ */
+export function parseLocalDateString(dateString: string): Date {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, (month || 1) - 1, day || 1);
+}
+
+/**
+ * Format a Date object as a 'YYYY-MM-DD' string using LOCAL date components
+ * (unlike Date#toISOString, which uses UTC and can shift the day).
+ */
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Add whole months to a date, clamping the day into the target month instead
+ * of overflowing into the next one. `new Date(2024, 0, 31)` + setMonth(+1)
+ * rolls over to March 2/3 because February has fewer days — for a monthly
+ * installment schedule that silently skips a whole payment month. Clamping
+ * to the last valid day (e.g. Jan 31 -> Feb 29) keeps one payment per month.
+ */
+export function addMonthsClamped(date: Date, monthsToAdd: number): Date {
+  const day = date.getDate();
+  const result = new Date(date.getFullYear(), date.getMonth() + monthsToAdd, 1);
+  const daysInTargetMonth = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+  result.setDate(Math.min(day, daysInTargetMonth));
+  return result;
+}
+
+/**
  * Get transactions for a specific month and year
  */
 export function getTransactionsForMonth(
@@ -25,7 +97,7 @@ export function getTransactionsForMonth(
   year: number
 ): Transaction[] {
   return transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 }
@@ -68,20 +140,21 @@ export function getTransactionsByCategory(
     .reduce((sum, t) => sum + t.amount, 0);
 
   transactions
-    .filter((t) => t.type === type)
+    .filter((t) => t.type === type && t.category !== undefined)
     .forEach((t) => {
-      if (!grouped[t.category]) {
-        grouped[t.category] = { total: 0, count: 0 };
+      const cat = t.category!;
+      if (!grouped[cat]) {
+        grouped[cat] = { total: 0, count: 0 };
       }
-      grouped[t.category].total += t.amount;
-      grouped[t.category].count += 1;
+      grouped[cat].total += t.amount;
+      grouped[cat].count += 1;
     });
 
   return Object.entries(grouped)
     .map(([category, data]) => {
       const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
       return {
-        category: category as any,
+        category: category as Category,
         label: categoryInfo?.label || category,
         icon: categoryInfo?.icon || '📌',
         total: data.total,
@@ -122,13 +195,32 @@ export function getMonthSummary(
  * @param language - The language code to determine locale (el, en, fr, etc.)
  * @returns Formatted currency string with correct separators for the locale
  */
+// Currencies that don't use subunits (e.g. JPY has no fractional yen) —
+// forcing 2 decimals on these reads as wrong to native users.
+const ZERO_DECIMAL_CURRENCIES: Currency[] = ['JPY'];
+
+/**
+ * Format a percentage value (already 0-100, not a 0-1 ratio) using the
+ * language's locale-correct decimal separator, so it matches the amounts
+ * displayed alongside it (formatCurrency/formatNumber both go through Intl).
+ */
+export function formatPercentage(value: number, language: Language = 'el'): string {
+  const locale = LANGUAGE_TO_LOCALE[language] || 'el-GR';
+  const formatter = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return `${formatter.format(value)}%`;
+}
+
 export function formatCurrency(amount: number, currency: Currency, language: Language = 'el'): string {
   const locale = LANGUAGE_TO_LOCALE[language] || 'el-GR';
+  const decimals = ZERO_DECIMAL_CURRENCIES.includes(currency) ? 0 : 2;
   const formatter = new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   });
   return formatter.format(amount);
 }
@@ -152,7 +244,7 @@ export function formatNumber(amount: number, language: Language = 'el'): string 
  * Format date based on selected format
  */
 export function formatDate(dateString: string, format: DateFormat): string {
-  const date = new Date(dateString);
+  const date = parseLocalDateString(dateString);
   const day = String(date.getDate()).padStart(2, '0');
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const year = date.getFullYear();
@@ -250,27 +342,6 @@ export function getPreviousMonth(month: number, year: number): { month: number; 
 }
 
 /**
- * Get month name in Greek
- */
-export function getMonthNameGreek(month: number): string {
-  const months = [
-    'Ιανουάριος',
-    'Φεβρουάριος',
-    'Μάρτιος',
-    'Απρίλιος',
-    'Μάιος',
-    'Ιούνιος',
-    'Ιούλιος',
-    'Αύγουστος',
-    'Σεπτέμβριος',
-    'Οκτώβριος',
-    'Νοέμβριος',
-    'Δεκέμβριος',
-  ];
-  return months[month - 1] || '';
-}
-
-/**
  * Hardcoded month names for languages where Intl API may not work properly
  */
 const MONTH_NAMES: Partial<Record<Language, string[]>> = {
@@ -297,8 +368,13 @@ export function getMonthName(month: number, language: Language = 'el'): string {
 }
 
 /**
- * Generate unique ID
+ * Generate a unique ID for a transaction/installment. Combines a timestamp
+ * with two independent random segments so a collision needs the same
+ * millisecond AND two matching Math.random() draws — add/edit-transaction.tsx
+ * used to each keep their own weaker local copy of this (a single, shorter
+ * Math.random() segment with no timestamp), so every id-consuming call site
+ * now shares this one implementation instead.
  */
 export function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}-${Math.random().toString(36).slice(2, 10)}`;
 }

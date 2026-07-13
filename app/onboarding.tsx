@@ -7,7 +7,6 @@ import { useUser } from '@/lib/user-context';
 import { useI18n } from '@/lib/i18n-context';
 
 export default function OnboardingScreen() {
-  console.log('=== ONBOARDING SCREEN RENDERED ===');
   const router = useRouter();
   const { setUsername, setPin } = useUser();
   const { t } = useI18n();
@@ -15,15 +14,12 @@ export default function OnboardingScreen() {
   const [pin, setPinState] = useState('');
   const [confirmPin, setConfirmPinState] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  console.log('Onboarding state:', { username, pin, confirmPin, isLoading });
-  
+
   // For debugging: clear user data
   const handleClearData = async () => {
     try {
       await AsyncStorage.removeItem('username');
       await AsyncStorage.removeItem('user_pin');
-      console.log('User data cleared');
       // Reload the app
       window.location.reload();
     } catch (error) {
@@ -32,57 +28,41 @@ export default function OnboardingScreen() {
   };
 
   const handleContinue = async () => {
-    console.log('handleContinue called');
     // Validation
     if (!username.trim()) {
-      Alert.alert(t('error'), t('username_required'));
+      Alert.alert(t('common.error'), t('settings.username_required'));
       return;
     }
 
     if (username.trim().length < 2) {
-      Alert.alert(t('error'), t('username_too_short'));
+      Alert.alert(t('common.error'), t('onboarding.usernameTooShort'));
       return;
     }
 
     if (!pin || pin.length < 4) {
-      Alert.alert(t('error'), t('pin_too_short'));
+      Alert.alert(t('common.error'), t('settings.pin_length_error'));
       return;
     }
 
     if (pin !== confirmPin) {
-      Alert.alert(t('error'), t('pin_mismatch'));
+      Alert.alert(t('common.error'), t('settings.pin_mismatch'));
       return;
     }
 
     try {
       setIsLoading(true);
-      console.log('Onboarding: Saving username and PIN', { username: username.trim(), pin });
-      
+
       // Save username first
       await setUsername(username.trim());
-      console.log('Onboarding: Username saved');
-      
-      // Save PIN via UserContext
+
+      // Save PIN via UserContext (hashed before it ever touches storage)
       await setPin(pin);
-      console.log('Onboarding: PIN saved via UserContext');
-      
-      // Also save PIN directly to AsyncStorage as fallback
-      await AsyncStorage.setItem('user_pin', pin);
-      console.log('Onboarding: PIN saved directly to AsyncStorage:', pin);
-      
-      // Verify PIN was saved
-      const savedPin = await AsyncStorage.getItem('user_pin');
-      console.log('Onboarding: Verification - PIN in AsyncStorage:', savedPin);
-      
-      // Add a small delay to ensure AsyncStorage write completes
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       // Navigate to home screen
-      console.log('Onboarding: Navigating to home');
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Onboarding error:', error);
-      Alert.alert(t('error'), t('setup_failed'));
+      Alert.alert(t('common.error'), t('onboarding.setupFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -97,21 +77,21 @@ export default function OnboardingScreen() {
         {/* Header */}
         <View className="mb-8 items-center">
           <Text className="text-3xl font-bold text-foreground mb-2">
-            {t('welcome')}
+            {t('onboarding.welcome')}
           </Text>
           <Text className="text-base text-muted text-center">
-            {t('setup_profile_description')}
+            {t('onboarding.description')}
           </Text>
         </View>
 
         {/* Username Input */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('username')}
+            {t('settings.username')}
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('enter_username')}
+            placeholder={t('settings.enter_username')}
             placeholderTextColor="#999"
             value={username}
             onChangeText={setUsernameState}
@@ -122,11 +102,11 @@ export default function OnboardingScreen() {
         {/* PIN Input */}
         <View className="mb-6">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('pin')} (4-6 {t('digits')})
+            {t('settings.pin')} (4-6 {t('onboarding.digits')})
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('enter_pin')}
+            placeholder={t('onboarding.enterPin')}
             placeholderTextColor="#999"
             value={pin}
             onChangeText={setPinState}
@@ -140,11 +120,11 @@ export default function OnboardingScreen() {
         {/* Confirm PIN Input */}
         <View className="mb-8">
           <Text className="text-sm font-semibold text-foreground mb-2">
-            {t('confirm_pin')}
+            {t('onboarding.confirmPin')}
           </Text>
           <TextInput
             className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
-            placeholder={t('confirm_pin')}
+            placeholder={t('onboarding.confirmPin')}
             placeholderTextColor="#999"
             value={confirmPin}
             onChangeText={setConfirmPinState}
@@ -158,17 +138,11 @@ export default function OnboardingScreen() {
         {/* Continue Button */}
         <Pressable
           className="bg-primary rounded-lg py-4 items-center"
-          onPress={() => {
-            console.log('=== BUTTON PRESSED ===');
-            console.log('Username:', username);
-            console.log('PIN:', pin);
-            console.log('Confirm PIN:', confirmPin);
-            handleContinue();
-          }}
+          onPress={handleContinue}
           disabled={isLoading}
         >
           <Text className="text-white font-semibold text-base">
-            {isLoading ? t('loading') : t('continue')}
+            {isLoading ? t('common.loading') : t('onboarding.continueLabel')}
           </Text>
         </Pressable>
       </ScreenContainer>

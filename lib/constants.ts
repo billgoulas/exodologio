@@ -1,29 +1,86 @@
-import { CategoryInfo, Language, Currency, DateFormat } from './types';
+import { CategoryInfo, Language, Currency, DateFormat, PaymentMethod } from './types';
 
 export const INCOME_CATEGORIES: CategoryInfo[] = [
   { id: 'salary', label: 'Μισθός', icon: '💼', type: 'income' },
   { id: 'freelance', label: 'Ελεύθερη Εργασία', icon: '💻', type: 'income' },
   { id: 'investment', label: 'Επένδυση', icon: '📈', type: 'income' },
   { id: 'bonus', label: 'Μπόνους', icon: '🎁', type: 'income' },
-  { id: 'other_income', label: 'Άλλο', icon: '📌', type: 'income' },
+  { id: 'gift', label: 'Δώρο', icon: '🎀', type: 'income' },
+  { id: 'rent_income', label: 'Ενοίκιο', icon: '🏠', type: 'income' },
+  { id: 'reward', label: 'Επιβράβευση', icon: '🎆', type: 'income' },
+  { id: 'other_income', label: 'Άλλο', icon: '📍', type: 'income' },
 ];
 
 export const EXPENSE_CATEGORIES: CategoryInfo[] = [
-  { id: 'shopping', label: 'Αγορά', icon: '🛍️', type: 'expense' },
   { id: 'groceries', label: 'Σουπερμάρκετ', icon: '🛒', type: 'expense' },
-  { id: 'transport', label: 'Μεταφορά', icon: '🚗', type: 'expense' },
+  { id: 'department_store', label: 'Πολυκατάστημα', icon: '🏬', type: 'expense' },
   { id: 'utilities', label: 'Λογαριασμός', icon: '📋', type: 'expense' },
+  { id: 'fuel', label: 'Καύσιμο', icon: '⛽', type: 'expense' },
+  { id: 'restaurant', label: 'Εστιατόριο', icon: '🍽️', type: 'expense' },
+  { id: 'bakery', label: 'Φούρνος', icon: '🥐', type: 'expense' },
+  { id: 'greengrocer', label: 'Μανάβικο', icon: '🥬', type: 'expense' },
+  { id: 'butcher', label: 'Κρεοπωλείο', icon: '🥩', type: 'expense' },
+  { id: 'bakery_pastry', label: 'Ζαχαροπλαστείο', icon: '🧁', type: 'expense' },
+  { id: 'pharmacy', label: 'Φαρμακείο', icon: '💊', type: 'expense' },
+  { id: 'snacks', label: 'Σνακ', icon: '🍿', type: 'expense' },
+  { id: 'clothing', label: 'Ρούχο', icon: '👕', type: 'expense' },
+  { id: 'shoes', label: 'Υπόδημα', icon: '👟', type: 'expense' },
+  { id: 'entertainment', label: 'Ψυχαγωγία', icon: '🎬', type: 'expense' },
+  { id: 'accessories', label: 'Αξεσουάρ', icon: '👜', type: 'expense' },
+  { id: 'books', label: 'Βιβλίο', icon: '📚', type: 'expense' },
+  { id: 'delivery', label: 'Delivery', icon: '🚚', type: 'expense' },
+  { id: 'tolls', label: 'Διόδια', icon: '🛣️', type: 'expense' },
   { id: 'rent', label: 'Ενοίκιο', icon: '🏠', type: 'expense' },
-  { id: 'loan', label: 'Δάνειο', icon: '🏦', type: 'expense' },
-  { id: 'credit_card', label: 'Πιστωτική Κάρτα', icon: '💳', type: 'expense' },
-  { id: 'debit_card', label: 'Χρεωστική Κάρτα', icon: '💰', type: 'expense' },
-  { id: 'entertainment', label: 'Διασκέδαση', icon: '🎬', type: 'expense' },
-  { id: 'repair', label: 'Επισκευή', icon: '🔧', type: 'expense' },
-  { id: 'investment', label: 'Επένδυση', icon: '📈', type: 'expense' },
+  { id: 'loan', label: 'Δάνειο', icon: '💳', type: 'expense' },
+  { id: 'repair', label: 'Επισκευή', icon: '🛠️', type: 'expense' },
   { id: 'health', label: 'Υγεία', icon: '🏥', type: 'expense' },
   { id: 'borrowed', label: 'Δανεικά', icon: '📤', type: 'expense' },
-  { id: 'other_expense', label: 'Άλλο', icon: '📌', type: 'expense' },
+  { id: 'investment_expense', label: 'Επένδυση', icon: '📈', type: 'expense' },
+  { id: 'gift_expense', label: 'Δώρο', icon: '🎀', type: 'expense' },
+  { id: 'transport', label: 'Μεταφορά', icon: '🚗', type: 'expense' },
+  { id: 'services', label: 'Υπηρεσία', icon: '🧰', type: 'expense' },
+  { id: 'other_expense', label: 'Άλλο', icon: '🔔', type: 'expense' },
 ];
+
+export interface PaymentMethodInfo {
+  id: PaymentMethod;
+  label: string;
+  icon: string;
+}
+
+export const PAYMENT_METHODS: PaymentMethodInfo[] = [
+  { id: 'credit_card', label: 'Πιστωτική Κάρτα', icon: '💰' },
+  { id: 'debit_card', label: 'Χρεωστική Κάρτα', icon: '🏧' },
+  { id: 'toll_card', label: 'Κάρτα Διοδίων', icon: '🪪' },
+  { id: 'iris', label: 'Iris', icon: '🔐' },
+  { id: 'gift_card', label: 'Δωροκάρτα', icon: '🎟️' },
+  { id: 'cash', label: 'Μετρητά', icon: '💵' },
+  { id: 'bank_transfer', label: 'Τραπεζικός Λογαριασμός', icon: '🏦' },
+  { id: 'investment_account', label: 'Επενδυτικός Λογαριασμός', icon: '📊' },
+  { id: 'rewards', label: 'Χρήματα Επιβραβεύσεων', icon: '⭐' },
+];
+
+export const PAYMENT_METHODS_MAP: Record<PaymentMethod, PaymentMethodInfo> = PAYMENT_METHODS.reduce(
+  (acc, pm) => ({ ...acc, [pm.id]: pm }),
+  {} as Record<PaymentMethod, PaymentMethodInfo>
+);
+
+export interface InstallmentPaymentMethodInfo {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+export const INSTALLMENT_PAYMENT_METHODS: InstallmentPaymentMethodInfo[] = [
+  { id: 'standing_order', label: 'Πάγια Εντολή', icon: '📋' },
+  { id: 'bank_transfer', label: 'Τραπεζικός Λογαριασμός', icon: '🏦' },
+  { id: 'cash', label: 'Μετρητά', icon: '💵' },
+];
+
+export const INSTALLMENT_PAYMENT_METHODS_MAP: Record<string, InstallmentPaymentMethodInfo> = INSTALLMENT_PAYMENT_METHODS.reduce(
+  (acc, pm) => ({ ...acc, [pm.id]: pm }),
+  {} as Record<string, InstallmentPaymentMethodInfo>
+);
 
 export const ALL_CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
 

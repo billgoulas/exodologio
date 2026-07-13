@@ -54,12 +54,36 @@ const env = {
 const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
-  version: "1.0.0",
-  orientation: "portrait",
+  owner: "pritanis1975",
+  version: "1.1.50",
+  orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
   userInterfaceStyle: "automatic",
   newArchEnabled: true,
+  // "sdkVersion" (not "appVersion") because this project bumps the JS-visible
+  // "version" field on nearly every fix — tying runtimeVersion to appVersion
+  // would mean every version bump also breaks OTA compatibility with the
+  // currently-installed native build, defeating the point of EAS Update.
+  // sdkVersion only changes when the Expo SDK itself is upgraded, so pure-JS
+  // fixes stay OTA-compatible across normal version bumps.
+  runtimeVersion: {
+    policy: "sdkVersion",
+  },
+  updates: {
+    url: "https://u.expo.dev/c527fdde-09e1-4fd8-b027-3617d6bc39f3",
+    // eas build injects the channel automatically from eas.json. Builds made
+    // locally (e.g. via Android Studio / gradlew) bypass that, so the
+    // channel has to be set explicitly here for OTA updates to resolve.
+    requestHeaders: {
+      "expo-channel-name": "production",
+    },
+  },
+  extra: {
+    eas: {
+      projectId: "c527fdde-09e1-4fd8-b027-3617d6bc39f3",
+    },
+  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: env.iosBundleId,
@@ -101,7 +125,10 @@ const config: ExpoConfig = {
     favicon: "./assets/images/favicon.webp",
   },
   plugins: [
+    "expo-font",
     "expo-router",
+    "expo-dev-client",
+    "expo-updates",
     [
       "expo-audio",
       {
