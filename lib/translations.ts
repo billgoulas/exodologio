@@ -291,6 +291,7 @@ export const translations: Translations = {
       gift: 'Δώρο',
       rent_income: 'Ενοίκιο',
       reward: 'Επιβράβευση',
+      subscriptions: 'Συνδρομές',
       other_income: 'Άλλο',
       groceries: 'Σουπερμάρκετ',
       department_store: 'Πολυκατάστημα',
@@ -561,6 +562,7 @@ export const translations: Translations = {
       gift: 'Gift',
       rent_income: 'Rent',
       reward: 'Reward',
+      subscriptions: 'Subscriptions',
       other_income: 'Other',
       groceries: 'Supermarket',
       department_store: 'Department Store',
@@ -864,6 +866,7 @@ export const translations: Translations = {
       gift: 'Cadeau',
       rent_income: 'Loyer',
       reward: 'Récompense',
+      subscriptions: 'Abonnements',
       other_income: 'Autre',
       groceries: 'Épicerie',
       department_store: 'Grand Magasin',
@@ -1169,6 +1172,7 @@ export const translations: Translations = {
       gift: 'Geschenk',
       rent_income: 'Miete',
       reward: 'Belohnung',
+      subscriptions: 'Abonnements',
       other_income: 'Sonstiges',
       groceries: 'Lebensmittel',
       department_store: 'Kaufhaus',
@@ -1474,6 +1478,7 @@ export const translations: Translations = {
       gift: 'Regalo',
       rent_income: 'Affitto',
       reward: 'Ricompensa',
+      subscriptions: 'Abbonamenti',
       other_income: 'Altro',
       groceries: 'Alimentari',
       department_store: 'Grande Magazzino',
@@ -1780,6 +1785,7 @@ export const translations: Translations = {
       gift: 'Regalo',
       rent_income: 'Alquiler',
       reward: 'Recompensa',
+      subscriptions: 'Suscripciones',
       other_income: 'Otro',
       groceries: 'Supermercado',
       department_store: 'Grandes Almacenes',
@@ -2085,6 +2091,7 @@ export const translations: Translations = {
       gift: 'Подарок',
       rent_income: 'Аренда',
       reward: 'Награда',
+      subscriptions: 'Подписки',
       other_income: 'Другое',
       groceries: 'Продукты',
       department_store: 'Универсальный магазин',
@@ -2390,6 +2397,7 @@ export const translations: Translations = {
       gift: 'Dhuratë',
       rent_income: 'Qira',
       reward: 'Shperblyese',
+      subscriptions: 'Abonime',
       other_income: 'Të tër',
       groceries: 'Supermarket',
       department_store: 'Dyqan i Madh',
@@ -2693,6 +2701,7 @@ export const translations: Translations = {
       gift: 'Подарък',
       rent_income: 'Наем',
       reward: 'Награда',
+      subscriptions: 'Абонаменти',
       other_income: 'Друго',
       groceries: 'Хранителни стоки',
       department_store: 'Универсален магазин',
@@ -2883,6 +2892,7 @@ const SYNC_STATUS_STRINGS: Record<Language, { syncStatus_active: string; syncSta
   const categories = translations[lang].categories as Record<string, string>;
   categories.investment_expense = categories.investment;
   categories.gift_expense = categories.gift;
+  categories.subscriptions_expense = categories.subscriptions;
 });
 
 // Note: Adding root-level PIN translation keys for all remaining languages

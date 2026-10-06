@@ -8,6 +8,7 @@ export const INCOME_CATEGORIES: CategoryInfo[] = [
   { id: 'gift', label: 'Δώρο', icon: '🎀', type: 'income' },
   { id: 'rent_income', label: 'Ενοίκιο', icon: '🏠', type: 'income' },
   { id: 'reward', label: 'Επιβράβευση', icon: '🎆', type: 'income' },
+  { id: 'subscriptions', label: 'Συνδρομές', icon: '🔄', type: 'income' },
   { id: 'other_income', label: 'Άλλο', icon: '📍', type: 'income' },
 ];
 
@@ -39,6 +40,7 @@ export const EXPENSE_CATEGORIES: CategoryInfo[] = [
   { id: 'gift_expense', label: 'Δώρο', icon: '🎀', type: 'expense' },
   { id: 'transport', label: 'Μεταφορά', icon: '🚗', type: 'expense' },
   { id: 'services', label: 'Υπηρεσία', icon: '🧰', type: 'expense' },
+  { id: 'subscriptions_expense', label: 'Συνδρομές', icon: '📺', type: 'expense' },
   { id: 'other_expense', label: 'Άλλο', icon: '🔔', type: 'expense' },
 ];
 
