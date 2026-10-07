@@ -176,11 +176,15 @@ function appReducer(state: AppState, action: AppAction): AppState {
     case 'DELETE_TILL_DAY':
       // Strip entries dated this day out of every archived shift, and drop
       // any shift left with no entries at all — a shift that spanned
-      // midnight keeps its other-day entries intact.
+      // midnight keeps its other-day entries intact. Also strip them from
+      // the live list: if the deleted day is the most recent one, its
+      // entries are still duplicated there (same overlap as DELETE_TILL_ENTRY)
+      // and the live summary/list would otherwise stay stale.
       return {
         ...state,
         till: {
           ...state.till,
+          entries: state.till.entries.filter((e) => e.date !== action.payload),
           history: state.till.history
             .map((record) => ({
               ...record,
