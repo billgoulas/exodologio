@@ -59,10 +59,29 @@ export interface Installment {
   isExpanded?: boolean; // Whether to show expanded payment records in list (only for newly created installments)
 }
 
+export type TillMethod = 'app' | 'cash' | 'appointment';
+
+export interface TillEntry {
+  id: string;
+  method: TillMethod;
+  receipt: boolean; // true = with receipt, false = without
+  amount: number;
+  date: string; // 'YYYY-MM-DD', local calendar date
+  time: string; // 'HH:MM', local time
+  createdAt: string; // ISO timestamp, used only for stable ordering
+}
+
+export interface TillState {
+  shiftActive: boolean;
+  shiftStartedAt: string | null; // ISO timestamp
+  entries: TillEntry[];
+}
+
 export interface AppState {
   transactions: Transaction[];
   installments: Installment[];
   settings: AppSettings;
+  till: TillState;
 }
 
 export interface CategoryInfo {

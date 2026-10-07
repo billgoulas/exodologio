@@ -59,6 +59,13 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="tameio"
+        options={{
+          title: t('nav.till'),
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="banknote.fill" color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: t('nav.settings'),

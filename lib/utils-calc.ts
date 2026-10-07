@@ -269,6 +269,15 @@ export function formatDate(dateString: string, format: DateFormat): string {
 }
 
 /**
+ * Format a Date object as a local 'HH:MM' time string (24-hour).
+ */
+export function formatTime(date: Date): string {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+/**
  * Parse date string based on format
  */
 export function parseDate(dateString: string, format: DateFormat): Date | null {

@@ -20,6 +20,7 @@ const MAPPING = {
   "chevron.right": "chevron-right",
   "gear": "settings",
   "receipt.fill": "receipt",
+  "banknote.fill": "point-of-sale",
 } as IconMapping;
 
 /**

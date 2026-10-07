@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, AppSettings, Transaction, Installment, Language, Currency, DateFormat, Theme } from './types';
+import { AppState, AppSettings, Transaction, Installment, Language, Currency, DateFormat, Theme, TillEntry, TillState } from './types';
 
 const STORAGE_KEY = 'exodologio_app_state';
 const SETTINGS_KEY = 'exodologio_settings';
@@ -12,10 +12,17 @@ const defaultSettings: AppSettings = {
   theme: 'auto',
 };
 
+const defaultTillState: TillState = {
+  shiftActive: false,
+  shiftStartedAt: null,
+  entries: [],
+};
+
 const defaultState: AppState = {
   transactions: [],
   installments: [],
   settings: defaultSettings,
+  till: defaultTillState,
 };
 
 type AppAction =
@@ -32,6 +39,9 @@ type AppAction =
   | { type: 'SET_DATE_FORMAT'; payload: DateFormat }
   | { type: 'SET_THEME'; payload: Theme }
   | { type: 'SET_SETTINGS'; payload: AppSettings }
+  | { type: 'START_SHIFT'; payload: string }
+  | { type: 'END_SHIFT' }
+  | { type: 'ADD_TILL_ENTRY'; payload: TillEntry }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
 
@@ -108,6 +118,24 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         settings: action.payload,
       };
+    case 'START_SHIFT':
+      // Starting a new shift clears the previous shift's entry list — it
+      // stays visible after END_SHIFT precisely so it can be reviewed before
+      // the next shift wipes it.
+      return {
+        ...state,
+        till: { shiftActive: true, shiftStartedAt: action.payload, entries: [] },
+      };
+    case 'END_SHIFT':
+      return {
+        ...state,
+        till: { ...state.till, shiftActive: false },
+      };
+    case 'ADD_TILL_ENTRY':
+      return {
+        ...state,
+        till: { ...state.till, entries: [action.payload, ...state.till.entries] },
+      };
     case 'LOAD_STATE':
       return action.payload;
     case 'CLEAR_ALL':
@@ -138,6 +166,9 @@ interface AppContextType {
   setDateFormat: (format: DateFormat) => void;
   setTheme: (theme: Theme) => void;
   setSettings: (settings: AppSettings) => void;
+  startShift: () => void;
+  endShift: () => void;
+  addTillEntry: (entry: TillEntry) => void;
   importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
@@ -173,6 +204,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (!Array.isArray(parsedState.transactions)) {
           parsedState.transactions = [];
+        }
+        if (typeof parsedState.till !== 'object' || parsedState.till === null) {
+          parsedState.till = defaultTillState;
+        } else {
+          if (!Array.isArray(parsedState.till.entries)) {
+            parsedState.till.entries = [];
+          }
+          if (typeof parsedState.till.shiftActive !== 'boolean') {
+            parsedState.till.shiftActive = false;
+          }
         }
         // Merge over defaultSettings so a missing/corrupted settings object,
         // or one missing individual fields from an older schema version,
@@ -247,6 +288,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_SETTINGS', payload: settings });
   }, []);
 
+  const startShift = useCallback(() => {
+    dispatch({ type: 'START_SHIFT', payload: new Date().toISOString() });
+  }, []);
+
+  const endShift = useCallback(() => {
+    dispatch({ type: 'END_SHIFT' });
+  }, []);
+
+  const addTillEntry = useCallback((entry: TillEntry) => {
+    dispatch({ type: 'ADD_TILL_ENTRY', payload: entry });
+  }, []);
+
   const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
@@ -315,6 +368,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDateFormat,
     setTheme,
     setSettings,
+    startShift,
+    endShift,
+    addTillEntry,
     importTransactions,
     exportData,
     clearAllData,
