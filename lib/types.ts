@@ -74,6 +74,7 @@ export interface TillEntry {
 export interface TillState {
   shiftActive: boolean;
   shiftStartedAt: string | null; // ISO timestamp
+  shiftEndedAt: string | null; // ISO timestamp
   entries: TillEntry[];
 }
 

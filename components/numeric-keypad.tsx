@@ -73,7 +73,13 @@ export function NumericKeypad({ onDigit, onComma, onBackspace, onConfirm }: Nume
         className="items-center justify-center rounded-xl bg-primary"
         style={({ pressed }) => [{ width: 64, opacity: pressed ? 0.7 : 1 }]}
       >
-        <Text className="text-2xl font-bold text-white">Ν</Text>
+        <View style={{ alignItems: 'center' }}>
+          {'ENTER'.split('').map((letter, i) => (
+            <Text key={i} className="text-lg font-bold text-white" style={{ lineHeight: 20 }}>
+              {letter}
+            </Text>
+          ))}
+        </View>
       </Pressable>
     </View>
   );

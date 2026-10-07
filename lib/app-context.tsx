@@ -15,6 +15,7 @@ const defaultSettings: AppSettings = {
 const defaultTillState: TillState = {
   shiftActive: false,
   shiftStartedAt: null,
+  shiftEndedAt: null,
   entries: [],
 };
 
@@ -40,7 +41,7 @@ type AppAction =
   | { type: 'SET_THEME'; payload: Theme }
   | { type: 'SET_SETTINGS'; payload: AppSettings }
   | { type: 'START_SHIFT'; payload: string }
-  | { type: 'END_SHIFT' }
+  | { type: 'END_SHIFT'; payload: string }
   | { type: 'ADD_TILL_ENTRY'; payload: TillEntry }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
@@ -124,12 +125,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
       // the next shift wipes it.
       return {
         ...state,
-        till: { shiftActive: true, shiftStartedAt: action.payload, entries: [] },
+        till: { shiftActive: true, shiftStartedAt: action.payload, shiftEndedAt: null, entries: [] },
       };
     case 'END_SHIFT':
       return {
         ...state,
-        till: { ...state.till, shiftActive: false },
+        till: { ...state.till, shiftActive: false, shiftEndedAt: action.payload },
       };
     case 'ADD_TILL_ENTRY':
       return {
@@ -214,6 +215,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
           if (typeof parsedState.till.shiftActive !== 'boolean') {
             parsedState.till.shiftActive = false;
           }
+          if (typeof parsedState.till.shiftStartedAt !== 'string') {
+            parsedState.till.shiftStartedAt = null;
+          }
+          if (typeof parsedState.till.shiftEndedAt !== 'string') {
+            parsedState.till.shiftEndedAt = null;
+          }
         }
         // Merge over defaultSettings so a missing/corrupted settings object,
         // or one missing individual fields from an older schema version,
@@ -293,7 +300,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const endShift = useCallback(() => {
-    dispatch({ type: 'END_SHIFT' });
+    dispatch({ type: 'END_SHIFT', payload: new Date().toISOString() });
   }, []);
 
   const addTillEntry = useCallback((entry: TillEntry) => {
