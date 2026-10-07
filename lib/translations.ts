@@ -341,6 +341,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Σύνολο Τζίρου Χωρίς Απόδειξη',
       history: 'Ιστορικό',
       noHistory: 'Δεν υπάρχει ιστορικό',
+      deleteDayConfirm: 'Είστε σίγουρος ότι θέλετε να διαγράψετε όλες τις συναλλαγές αυτής της ημέρας;',
     },
     paymentMethods: {
       credit_card: 'Πιστωτική Κάρτα',
@@ -634,6 +635,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Total Turnover Without Receipt',
       history: 'History',
       noHistory: 'No history yet',
+      deleteDayConfirm: 'Are you sure you want to delete all transactions for this day?',
     },
     installment: {
       title: 'Installments',
@@ -962,6 +964,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: "Chiffre d'Affaires Total Sans Reçu",
       history: 'Historique',
       noHistory: 'Aucun historique',
+      deleteDayConfirm: 'Voulez-vous vraiment supprimer toutes les transactions de ce jour ?',
     },
     installment: {
       title: 'Acomptes',
@@ -1290,6 +1293,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Gesamtumsatz Ohne Beleg',
       history: 'Verlauf',
       noHistory: 'Kein Verlauf vorhanden',
+      deleteDayConfirm: 'Möchten Sie wirklich alle Transaktionen dieses Tages löschen?',
     },
     installment: {
       title: 'Raten',
@@ -1618,6 +1622,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Fatturato Totale Senza Ricevuta',
       history: 'Cronologia',
       noHistory: 'Nessuna cronologia',
+      deleteDayConfirm: 'Sei sicuro di voler eliminare tutte le transazioni di questo giorno?',
     },
     installment: {
       title: 'Rate',
@@ -1947,6 +1952,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Facturación Total Sin Recibo',
       history: 'Historial',
       noHistory: 'Sin historial',
+      deleteDayConfirm: '¿Seguro que quieres eliminar todas las transacciones de este día?',
     },
     installment: {
       title: 'Cuotas',
@@ -2275,6 +2281,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Общий Оборот Без Чека',
       history: 'История',
       noHistory: 'История пуста',
+      deleteDayConfirm: 'Вы уверены, что хотите удалить все транзакции за этот день?',
     },
     installment: {
       title: 'Рассрочки',
@@ -2603,6 +2610,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Xhiro Totale Pa Faturë',
       history: 'Historiku',
       noHistory: 'Nuk ka historik',
+      deleteDayConfirm: 'Je i sigurt që dëshiron të fshish të gjitha transaksionet e kësaj dite?',
     },
     installment: {
       title: 'Këste',
@@ -2929,6 +2937,7 @@ export const translations: Translations = {
       summaryTotalNoReceipt: 'Общ Оборот Без Бележка',
       history: 'История',
       noHistory: 'Няма история',
+      deleteDayConfirm: 'Сигурни ли сте, че искате да изтриете всички транзакции за този ден?',
     },
     installment: {
       title: 'Вноски',

@@ -1,15 +1,18 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ScreenContainer } from '@/components/screen-container';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
+import { useColors } from '@/hooks/use-colors';
 import { formatCurrency, formatDate } from '@/lib/utils-calc';
 
 export default function TillHistoryScreen() {
   const router = useRouter();
-  const { state } = useAppContext();
+  const { state, deleteTillDay } = useAppContext();
   const { t, language } = useI18n();
+  const colors = useColors();
   const { history } = state.till;
   const currency = state.settings.currency;
   const dateFormat = state.settings.dateFormat;
@@ -25,6 +28,21 @@ export default function TillHistoryScreen() {
       .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))
       .map(([date, total]) => ({ date, total }));
   }, [history]);
+
+  const handleDelete = (date: string) => {
+    Alert.alert(
+      t('common.confirm'),
+      t('till.deleteDayConfirm'),
+      [
+        { text: t('common.cancel'), onPress: () => {}, style: 'cancel' },
+        {
+          text: t('common.delete'),
+          onPress: () => deleteTillDay(date),
+          style: 'destructive',
+        },
+      ]
+    );
+  };
 
   return (
     <ScreenContainer className="p-4">
@@ -43,15 +61,26 @@ export default function TillHistoryScreen() {
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
           <View style={{ gap: 10 }}>
             {days.map((day) => (
-              <Pressable
+              <View
                 key={day.date}
-                onPress={() => router.push({ pathname: '/till-history-day', params: { date: day.date } })}
-                className="rounded-xl bg-surface border border-border px-4 py-4 flex-row justify-between items-center"
-                style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                className="rounded-xl bg-surface border border-border flex-row items-center"
               >
-                <Text className="text-base font-semibold text-foreground">{formatDate(day.date, dateFormat)}</Text>
-                <Text className="text-lg font-bold text-foreground">{formatCurrency(day.total, currency, language)}</Text>
-              </Pressable>
+                <Pressable
+                  onPress={() => router.push({ pathname: '/till-history-day', params: { date: day.date } })}
+                  className="flex-1 flex-row justify-between items-center px-4 py-4"
+                  style={({ pressed }) => [{ opacity: pressed ? 0.8 : 1 }]}
+                >
+                  <Text className="text-base font-semibold text-foreground">{formatDate(day.date, dateFormat)}</Text>
+                  <Text className="text-lg font-bold text-foreground">{formatCurrency(day.total, currency, language)}</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => handleDelete(day.date)}
+                  className="px-3 py-4"
+                  style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
+                >
+                  <MaterialIcons name="delete-outline" size={24} color={colors.icon} />
+                </Pressable>
+              </View>
             ))}
           </View>
         </ScrollView>

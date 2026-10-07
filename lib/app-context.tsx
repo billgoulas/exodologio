@@ -45,6 +45,7 @@ type AppAction =
   | { type: 'START_SHIFT'; payload: string }
   | { type: 'END_SHIFT'; payload: string }
   | { type: 'ADD_TILL_ENTRY'; payload: TillEntry }
+  | { type: 'DELETE_TILL_DAY'; payload: string }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
 
@@ -152,6 +153,22 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         till: { ...state.till, entries: [action.payload, ...state.till.entries] },
       };
+    case 'DELETE_TILL_DAY':
+      // Strip entries dated this day out of every archived shift, and drop
+      // any shift left with no entries at all — a shift that spanned
+      // midnight keeps its other-day entries intact.
+      return {
+        ...state,
+        till: {
+          ...state.till,
+          history: state.till.history
+            .map((record) => ({
+              ...record,
+              entries: record.entries.filter((e) => e.date !== action.payload),
+            }))
+            .filter((record) => record.entries.length > 0),
+        },
+      };
     case 'LOAD_STATE':
       return action.payload;
     case 'CLEAR_ALL':
@@ -185,6 +202,7 @@ interface AppContextType {
   startShift: () => void;
   endShift: () => void;
   addTillEntry: (entry: TillEntry) => void;
+  deleteTillDay: (date: string) => void;
   importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
@@ -325,6 +343,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'ADD_TILL_ENTRY', payload: entry });
   }, []);
 
+  const deleteTillDay = useCallback((date: string) => {
+    dispatch({ type: 'DELETE_TILL_DAY', payload: date });
+  }, []);
+
   const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
@@ -396,6 +418,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     startShift,
     endShift,
     addTillEntry,
+    deleteTillDay,
     importTransactions,
     exportData,
     clearAllData,
