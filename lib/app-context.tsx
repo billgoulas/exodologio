@@ -1,6 +1,7 @@
 import React, { createContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AppState, AppSettings, Transaction, Installment, Language, Currency, DateFormat, Theme, TillEntry, TillState } from './types';
+import { generateId } from './utils-calc';
 
 const STORAGE_KEY = 'exodologio_app_state';
 const SETTINGS_KEY = 'exodologio_settings';
@@ -17,6 +18,7 @@ const defaultTillState: TillState = {
   shiftStartedAt: null,
   shiftEndedAt: null,
   entries: [],
+  history: [],
 };
 
 const defaultState: AppState = {
@@ -120,18 +122,31 @@ function appReducer(state: AppState, action: AppAction): AppState {
         settings: action.payload,
       };
     case 'START_SHIFT':
-      // Starting a new shift clears the previous shift's entry list — it
-      // stays visible after END_SHIFT precisely so it can be reviewed before
-      // the next shift wipes it.
+      // Starting a new shift clears the previous shift's entry list from the
+      // live view — it stays visible after END_SHIFT precisely so it can be
+      // reviewed before the next shift wipes it, and by then it's already
+      // archived into history (see END_SHIFT below).
       return {
         ...state,
-        till: { shiftActive: true, shiftStartedAt: action.payload, shiftEndedAt: null, entries: [] },
+        till: { ...state.till, shiftActive: true, shiftStartedAt: action.payload, shiftEndedAt: null, entries: [] },
       };
-    case 'END_SHIFT':
+    case 'END_SHIFT': {
+      const completedShift = {
+        id: generateId(),
+        startedAt: state.till.shiftStartedAt ?? action.payload,
+        endedAt: action.payload,
+        entries: state.till.entries,
+      };
       return {
         ...state,
-        till: { ...state.till, shiftActive: false, shiftEndedAt: action.payload },
+        till: {
+          ...state.till,
+          shiftActive: false,
+          shiftEndedAt: action.payload,
+          history: [completedShift, ...state.till.history],
+        },
       };
+    }
     case 'ADD_TILL_ENTRY':
       return {
         ...state,
@@ -220,6 +235,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
           if (typeof parsedState.till.shiftEndedAt !== 'string') {
             parsedState.till.shiftEndedAt = null;
+          }
+          if (!Array.isArray(parsedState.till.history)) {
+            parsedState.till.history = [];
           }
         }
         // Merge over defaultSettings so a missing/corrupted settings object,

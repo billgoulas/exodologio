@@ -71,11 +71,19 @@ export interface TillEntry {
   createdAt: string; // ISO timestamp, used only for stable ordering
 }
 
+export interface TillShiftRecord {
+  id: string;
+  startedAt: string; // ISO timestamp
+  endedAt: string; // ISO timestamp
+  entries: TillEntry[];
+}
+
 export interface TillState {
   shiftActive: boolean;
   shiftStartedAt: string | null; // ISO timestamp
   shiftEndedAt: string | null; // ISO timestamp
   entries: TillEntry[];
+  history: TillShiftRecord[]; // every completed shift, newest first
 }
 
 export interface AppState {

@@ -339,6 +339,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Ποσό POS Χωρίς Απόδειξη',
       summaryTotalReceipt: 'Σύνολο Τζίρου με Απόδειξη',
       summaryTotalNoReceipt: 'Σύνολο Τζίρου Χωρίς Απόδειξη',
+      history: 'Ιστορικό',
+      noHistory: 'Δεν υπάρχει ιστορικό',
     },
     paymentMethods: {
       credit_card: 'Πιστωτική Κάρτα',
@@ -630,6 +632,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'POS Amount Without Receipt',
       summaryTotalReceipt: 'Total Turnover With Receipt',
       summaryTotalNoReceipt: 'Total Turnover Without Receipt',
+      history: 'History',
+      noHistory: 'No history yet',
     },
     installment: {
       title: 'Installments',
@@ -956,6 +960,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Montant POS Sans Reçu',
       summaryTotalReceipt: "Chiffre d'Affaires Total Avec Reçu",
       summaryTotalNoReceipt: "Chiffre d'Affaires Total Sans Reçu",
+      history: 'Historique',
+      noHistory: 'Aucun historique',
     },
     installment: {
       title: 'Acomptes',
@@ -1282,6 +1288,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'POS-Betrag Ohne Beleg',
       summaryTotalReceipt: 'Gesamtumsatz Mit Beleg',
       summaryTotalNoReceipt: 'Gesamtumsatz Ohne Beleg',
+      history: 'Verlauf',
+      noHistory: 'Kein Verlauf vorhanden',
     },
     installment: {
       title: 'Raten',
@@ -1608,6 +1616,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Importo POS Senza Ricevuta',
       summaryTotalReceipt: 'Fatturato Totale Con Ricevuta',
       summaryTotalNoReceipt: 'Fatturato Totale Senza Ricevuta',
+      history: 'Cronologia',
+      noHistory: 'Nessuna cronologia',
     },
     installment: {
       title: 'Rate',
@@ -1935,6 +1945,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Importe POS Sin Recibo',
       summaryTotalReceipt: 'Facturación Total Con Recibo',
       summaryTotalNoReceipt: 'Facturación Total Sin Recibo',
+      history: 'Historial',
+      noHistory: 'Sin historial',
     },
     installment: {
       title: 'Cuotas',
@@ -2261,6 +2273,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Сумма POS Без Чека',
       summaryTotalReceipt: 'Общий Оборот С Чеком',
       summaryTotalNoReceipt: 'Общий Оборот Без Чека',
+      history: 'История',
+      noHistory: 'История пуста',
     },
     installment: {
       title: 'Рассрочки',
@@ -2587,6 +2601,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Shuma POS Pa Faturë',
       summaryTotalReceipt: 'Xhiro Totale Me Faturë',
       summaryTotalNoReceipt: 'Xhiro Totale Pa Faturë',
+      history: 'Historiku',
+      noHistory: 'Nuk ka historik',
     },
     installment: {
       title: 'Këste',
@@ -2911,6 +2927,8 @@ export const translations: Translations = {
       summaryPosNoReceipt: 'Сума POS Без Бележка',
       summaryTotalReceipt: 'Общ Оборот С Бележка',
       summaryTotalNoReceipt: 'Общ Оборот Без Бележка',
+      history: 'История',
+      noHistory: 'Няма история',
     },
     installment: {
       title: 'Вноски',
