@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ScreenContainer } from '@/components/screen-container';
 import { TillSummaryCard } from '@/components/till-summary-card';
@@ -12,7 +12,7 @@ const METHODS: TillMethod[] = ['app', 'cash', 'appointment'];
 
 export default function TameioScreen() {
   const router = useRouter();
-  const { state, startShift, endShift } = useAppContext();
+  const { state, startShift, endShift, deleteTillEntry } = useAppContext();
   const { t, language } = useI18n();
 
   const { shiftActive, shiftStartedAt, shiftEndedAt, entries } = state.till;
@@ -26,6 +26,17 @@ export default function TameioScreen() {
 
   const openMethod = (method: TillMethod) => {
     router.push({ pathname: '/till-receipt', params: { method } });
+  };
+
+  const handleDeleteEntry = (id: string) => {
+    Alert.alert(
+      t('common.confirm'),
+      t('transactions.deleteConfirm'),
+      [
+        { text: t('common.cancel'), onPress: () => {}, style: 'cancel' },
+        { text: t('common.delete'), onPress: () => deleteTillEntry(id), style: 'destructive' },
+      ]
+    );
   };
 
   return (
@@ -101,7 +112,14 @@ export default function TameioScreen() {
           {entries.length > 0 && (
             <View className="mt-6" style={{ gap: 10 }}>
               {entries.map((entry) => (
-                <TillEntryRow key={entry.id} entry={entry} currency={currency} dateFormat={dateFormat} language={language} />
+                <TillEntryRow
+                  key={entry.id}
+                  entry={entry}
+                  currency={currency}
+                  dateFormat={dateFormat}
+                  language={language}
+                  onDelete={() => handleDeleteEntry(entry.id)}
+                />
               ))}
             </View>
           )}

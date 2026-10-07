@@ -46,6 +46,7 @@ type AppAction =
   | { type: 'END_SHIFT'; payload: string }
   | { type: 'ADD_TILL_ENTRY'; payload: TillEntry }
   | { type: 'DELETE_TILL_DAY'; payload: string }
+  | { type: 'DELETE_TILL_ENTRY'; payload: string }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
 
@@ -153,6 +154,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         till: { ...state.till, entries: [action.payload, ...state.till.entries] },
       };
+    case 'DELETE_TILL_ENTRY':
+      return {
+        ...state,
+        till: { ...state.till, entries: state.till.entries.filter((e) => e.id !== action.payload) },
+      };
     case 'DELETE_TILL_DAY':
       // Strip entries dated this day out of every archived shift, and drop
       // any shift left with no entries at all — a shift that spanned
@@ -203,6 +209,7 @@ interface AppContextType {
   endShift: () => void;
   addTillEntry: (entry: TillEntry) => void;
   deleteTillDay: (date: string) => void;
+  deleteTillEntry: (id: string) => void;
   importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
@@ -347,6 +354,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'DELETE_TILL_DAY', payload: date });
   }, []);
 
+  const deleteTillEntry = useCallback((id: string) => {
+    dispatch({ type: 'DELETE_TILL_ENTRY', payload: id });
+  }, []);
+
   const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
@@ -419,6 +430,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     endShift,
     addTillEntry,
     deleteTillDay,
+    deleteTillEntry,
     importTransactions,
     exportData,
     clearAllData,
