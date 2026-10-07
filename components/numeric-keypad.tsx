@@ -59,15 +59,21 @@ export function NumericKeypad({ onDigit, onComma, onBackspace, onConfirm }: Nume
         <View className="flex-row" style={{ gap: 10 }}>
           <KeyButton label="," onPress={onComma} />
           <KeyButton label="0" onPress={() => onDigit('0')} />
-          <KeyButton label="Ν" primary onPress={onConfirm} />
+          <Pressable
+            onPress={onBackspace}
+            className="flex-1 items-center justify-center rounded-xl bg-surface border border-border"
+            style={({ pressed }) => [{ height: 60, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <MaterialIcons name="backspace" size={26} color={colors.icon} />
+          </Pressable>
         </View>
       </View>
       <Pressable
-        onPress={onBackspace}
-        className="items-center justify-center rounded-xl border-2 border-border"
+        onPress={onConfirm}
+        className="items-center justify-center rounded-xl bg-primary"
         style={({ pressed }) => [{ width: 64, opacity: pressed ? 0.7 : 1 }]}
       >
-        <MaterialIcons name="backspace" size={28} color={colors.icon} />
+        <Text className="text-2xl font-bold text-white">Ν</Text>
       </Pressable>
     </View>
   );
