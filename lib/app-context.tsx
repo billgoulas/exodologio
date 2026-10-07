@@ -155,9 +155,23 @@ function appReducer(state: AppState, action: AppAction): AppState {
         till: { ...state.till, entries: [action.payload, ...state.till.entries] },
       };
     case 'DELETE_TILL_ENTRY':
+      // An entry can exist in both the live list AND an already-archived
+      // history record at the same time (between End Shift and the next
+      // Start Shift, which is when the live list finally gets cleared) — so
+      // it has to be scrubbed from both places, not just whichever list the
+      // delete button was pressed from.
       return {
         ...state,
-        till: { ...state.till, entries: state.till.entries.filter((e) => e.id !== action.payload) },
+        till: {
+          ...state.till,
+          entries: state.till.entries.filter((e) => e.id !== action.payload),
+          history: state.till.history
+            .map((record) => ({
+              ...record,
+              entries: record.entries.filter((e) => e.id !== action.payload),
+            }))
+            .filter((record) => record.entries.length > 0),
+        },
       };
     case 'DELETE_TILL_DAY':
       // Strip entries dated this day out of every archived shift, and drop
