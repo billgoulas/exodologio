@@ -8,17 +8,24 @@ interface SummaryCardProps {
   amount: number;
   currency: Currency;
   language?: Language;
-  type: 'income' | 'expense' | 'balance';
+  type: 'income' | 'expense' | 'balance' | 'payment';
+  color?: string; // Optional custom color override
 }
 
-export function SummaryCard({ label, amount, currency, language = 'el', type }: SummaryCardProps) {
+export function SummaryCard({ label, amount, currency, language = 'el', type, color }: SummaryCardProps) {
   const getTextColor = () => {
+    // If custom color is provided, use it
+    if (color) {
+      return color;
+    }
+    
     switch (type) {
       case 'income':
         return CHART_COLORS.income;
       case 'expense':
         return CHART_COLORS.expense;
       case 'balance':
+      case 'payment':
         return CHART_COLORS.balance;
       default:
         return CHART_COLORS.primary;
