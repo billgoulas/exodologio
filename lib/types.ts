@@ -60,6 +60,7 @@ export interface Installment {
 }
 
 export type TillMethod = 'app' | 'cash' | 'appointment';
+export type TillExpenseCategory = 'fuel' | 'wash' | 'parts';
 
 export interface TillEntry {
   id: string;
@@ -71,11 +72,21 @@ export interface TillEntry {
   createdAt: string; // ISO timestamp, used only for stable ordering
 }
 
+export interface TillExpenseEntry {
+  id: string;
+  category: TillExpenseCategory;
+  amount: number;
+  date: string; // 'YYYY-MM-DD', local calendar date
+  time: string; // 'HH:MM', local time
+  createdAt: string; // ISO timestamp, used only for stable ordering
+}
+
 export interface TillShiftRecord {
   id: string;
   startedAt: string; // ISO timestamp
   endedAt: string; // ISO timestamp
   entries: TillEntry[];
+  expenses: TillExpenseEntry[];
 }
 
 export interface TillState {
@@ -83,6 +94,7 @@ export interface TillState {
   shiftStartedAt: string | null; // ISO timestamp
   shiftEndedAt: string | null; // ISO timestamp
   entries: TillEntry[];
+  expenses: TillExpenseEntry[];
   history: TillShiftRecord[]; // every completed shift, newest first
 }
 

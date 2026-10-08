@@ -15,7 +15,7 @@ export default function TameioScreen() {
   const { state, startShift, endShift, deleteTillEntry } = useAppContext();
   const { t, language } = useI18n();
 
-  const { shiftActive, shiftStartedAt, shiftEndedAt, entries } = state.till;
+  const { shiftActive, shiftStartedAt, shiftEndedAt, entries, expenses } = state.till;
   const currency = state.settings.currency;
   const dateFormat = state.settings.dateFormat;
 
@@ -62,9 +62,9 @@ export default function TameioScreen() {
           className="flex-1 px-4 py-4"
           contentContainerStyle={{ paddingBottom: 20 }}
         >
-          {entries.length > 0 && (
+          {(entries.length > 0 || expenses.length > 0) && (
             <View className="mb-4">
-              <TillSummaryCard entries={entries} currency={currency} language={language} />
+              <TillSummaryCard entries={entries} expenses={expenses} currency={currency} language={language} />
             </View>
           )}
 
@@ -74,6 +74,14 @@ export default function TameioScreen() {
             style={({ pressed }) => [{ height: 48, opacity: pressed ? 0.7 : 1 }]}
           >
             <Text className="text-base font-bold text-foreground">{t('till.history')}</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => router.push('/till-expenses')}
+            className="rounded-xl items-center justify-center bg-surface border border-border mb-4"
+            style={({ pressed }) => [{ height: 48, opacity: pressed ? 0.7 : 1 }]}
+          >
+            <Text className="text-base font-bold text-foreground">{t('till.expenses')}</Text>
           </Pressable>
 
           <Pressable

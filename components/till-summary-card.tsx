@@ -1,7 +1,7 @@
 import { View, Text } from 'react-native';
 import { useMemo } from 'react';
 import { useI18n } from '@/lib/i18n-context';
-import { TillEntry, TillMethod, Currency, Language } from '@/lib/types';
+import { TillEntry, TillExpenseEntry, TillMethod, TillExpenseCategory, Currency, Language } from '@/lib/types';
 import { formatCurrency } from '@/lib/utils-calc';
 
 function SummaryRow({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
@@ -17,15 +17,18 @@ function SummaryRow({ label, value, bold }: { label: string; value: string; bold
 
 /**
  * Breakdown of a till entry list by method (App/Cash/POS) x receipt status,
- * plus combined with-receipt/without-receipt turnover totals. Used both for
+ * plus combined with-receipt/without-receipt turnover totals, and the
+ * expense categories (Fuel/Wash/Parts) with their own total. Used both for
  * the live current shift and for a past shift shown in Ιστορικό.
  */
 export function TillSummaryCard({
   entries,
+  expenses,
   currency,
   language,
 }: {
   entries: TillEntry[];
+  expenses: TillExpenseEntry[];
   currency: Currency;
   language: Language;
 }) {
@@ -44,6 +47,13 @@ export function TillSummaryCard({
     const posReceipt = sum('appointment', true);
     const posNoReceipt = sum('appointment', false);
 
+    const expenseSum = (category: TillExpenseCategory) =>
+      expenses.filter((e) => e.category === category).reduce((total, e) => total + e.amount, 0);
+
+    const fuelExpense = expenseSum('fuel');
+    const washExpense = expenseSum('wash');
+    const partsExpense = expenseSum('parts');
+
     return {
       appReceipt,
       appNoReceipt,
@@ -53,8 +63,12 @@ export function TillSummaryCard({
       posNoReceipt,
       totalReceipt: appReceipt + cashReceipt + posReceipt,
       totalNoReceipt: appNoReceipt + cashNoReceipt + posNoReceipt,
+      fuelExpense,
+      washExpense,
+      partsExpense,
+      totalExpenses: fuelExpense + washExpense + partsExpense,
     };
-  }, [entries]);
+  }, [entries, expenses]);
 
   return (
     <View className="rounded-xl bg-surface border border-border px-4 py-3" style={{ gap: 8 }}>
@@ -67,6 +81,11 @@ export function TillSummaryCard({
       <View className="border-t border-border my-1" />
       <SummaryRow label={t('till.summaryTotalReceipt')} value={formatCurrency(summary.totalReceipt, currency, language)} bold />
       <SummaryRow label={t('till.summaryTotalNoReceipt')} value={formatCurrency(summary.totalNoReceipt, currency, language)} bold />
+      <View className="border-t border-border my-1" />
+      <SummaryRow label={t('till.summaryFuelExpense')} value={formatCurrency(summary.fuelExpense, currency, language)} />
+      <SummaryRow label={t('till.summaryWashExpense')} value={formatCurrency(summary.washExpense, currency, language)} />
+      <SummaryRow label={t('till.summaryPartsExpense')} value={formatCurrency(summary.partsExpense, currency, language)} />
+      <SummaryRow label={t('till.summaryTotalExpenses')} value={formatCurrency(summary.totalExpenses, currency, language)} bold />
     </View>
   );
 }

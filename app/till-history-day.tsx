@@ -4,9 +4,10 @@ import { useMemo } from 'react';
 import { ScreenContainer } from '@/components/screen-container';
 import { TillSummaryCard } from '@/components/till-summary-card';
 import { TillEntryRow } from '@/components/till-entry-row';
+import { TillExpenseRow } from '@/components/till-expense-row';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
-import { TillEntry } from '@/lib/types';
+import { TillEntry, TillExpenseEntry } from '@/lib/types';
 import { formatDate, toLocalDateString, formatTime } from '@/lib/utils-calc';
 
 export default function TillHistoryDayScreen() {
@@ -31,13 +32,23 @@ export default function TillHistoryDayScreen() {
     [history, date]
   );
 
-  // The flat transaction list below is independent of which shift an entry
-  // belongs to — every entry dated this day, from any shift.
+  // The flat lists below are independent of which shift an entry/expense
+  // belongs to — every record dated this day, from any shift.
   const dayEntries = useMemo(() => {
     const all: TillEntry[] = [];
     history.forEach((record) => {
       record.entries.forEach((entry) => {
         if (entry.date === date) all.push(entry);
+      });
+    });
+    return all.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
+  }, [history, date]);
+
+  const dayExpenses = useMemo(() => {
+    const all: TillExpenseEntry[] = [];
+    history.forEach((record) => {
+      record.expenses.forEach((expense) => {
+        if (expense.date === date) all.push(expense);
       });
     });
     return all.sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0));
@@ -61,14 +72,22 @@ export default function TillHistoryDayScreen() {
             <Text className="text-sm text-muted mb-2">
               {t('till.endShift')}: {formatShiftTimestamp(record.endedAt)}
             </Text>
-            <TillSummaryCard entries={record.entries} currency={currency} language={language} />
+            <TillSummaryCard entries={record.entries} expenses={record.expenses} currency={currency} language={language} />
           </View>
         ))}
 
         {dayEntries.length > 0 && (
-          <View style={{ gap: 10 }}>
+          <View style={{ gap: 10 }} className="mb-4">
             {dayEntries.map((entry) => (
               <TillEntryRow key={entry.id} entry={entry} currency={currency} dateFormat={dateFormat} language={language} />
+            ))}
+          </View>
+        )}
+
+        {dayExpenses.length > 0 && (
+          <View style={{ gap: 10 }}>
+            {dayExpenses.map((expense) => (
+              <TillExpenseRow key={expense.id} expense={expense} currency={currency} dateFormat={dateFormat} language={language} />
             ))}
           </View>
         )}

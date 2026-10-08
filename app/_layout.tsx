@@ -77,6 +77,7 @@ function RootLayoutContent({
                   <Stack.Screen name="till-amount" />
                   <Stack.Screen name="till-history" />
                   <Stack.Screen name="till-history-day" />
+                  <Stack.Screen name="till-expenses" />
                 </>
               )}
               <Stack.Screen name="oauth/callback" />

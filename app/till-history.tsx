@@ -19,10 +19,16 @@ export default function TillHistoryScreen() {
 
   const days = useMemo(() => {
     const totals = new Map<string, number>();
+    const touch = (date: string) => {
+      if (!totals.has(date)) totals.set(date, 0);
+    };
     history.forEach((record) => {
       record.entries.forEach((entry) => {
         totals.set(entry.date, (totals.get(entry.date) || 0) + entry.amount);
       });
+      // A day with only expenses (no sales) still needs to show up so it
+      // can be reviewed/deleted — its turnover is simply 0.
+      record.expenses.forEach((expense) => touch(expense.date));
     });
     return Array.from(totals.entries())
       .sort((a, b) => (a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0))

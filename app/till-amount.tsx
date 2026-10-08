@@ -7,19 +7,20 @@ import { NumericKeypad } from '@/components/numeric-keypad';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
-import { TillMethod } from '@/lib/types';
+import { TillMethod, TillExpenseCategory } from '@/lib/types';
 import { toLocalDateString, formatTime, generateId } from '@/lib/utils-calc';
 
 const DECIMAL_SEPARATOR = ',';
 
 export default function TillAmountScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ method: TillMethod; receipt: string }>();
-  const { addTillEntry, state } = useAppContext();
+  const params = useLocalSearchParams<{ method?: TillMethod; receipt?: string; expenseCategory?: TillExpenseCategory }>();
+  const { addTillEntry, addTillExpense, state } = useAppContext();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
 
+  const expenseCategory = params.expenseCategory;
   const method = params.method;
   const receipt = params.receipt === '1';
   const currencySymbol = CURRENCY_SYMBOLS[state.settings.currency];
@@ -49,9 +50,23 @@ export default function TillAmountScreen() {
     }
 
     const now = new Date();
+
+    if (expenseCategory) {
+      addTillExpense({
+        id: generateId(),
+        category: expenseCategory,
+        amount: numericAmount,
+        date: toLocalDateString(now),
+        time: formatTime(now),
+        createdAt: now.toISOString(),
+      });
+      router.dismissTo('/till-expenses');
+      return;
+    }
+
     addTillEntry({
       id: generateId(),
-      method,
+      method: method as TillMethod,
       receipt,
       amount: numericAmount,
       date: toLocalDateString(now),
