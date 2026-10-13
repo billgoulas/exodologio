@@ -1,11 +1,12 @@
 import { View, Text, Pressable, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { NumericKeypad } from '@/components/numeric-keypad';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
+import { useTillVoice } from '@/lib/till-voice-context';
 import { CURRENCY_SYMBOLS } from '@/lib/constants';
 import { TillMethod, TillExpenseCategory } from '@/lib/types';
 import { toLocalDateString, formatTime, generateId } from '@/lib/utils-calc';
@@ -17,6 +18,7 @@ export default function TillAmountScreen() {
   const params = useLocalSearchParams<{ method?: TillMethod; receipt?: string; expenseCategory?: TillExpenseCategory }>();
   const { addTillEntry, addTillExpense, state } = useAppContext();
   const { t } = useI18n();
+  const { voiceAmountText, consumeVoiceAmount, voiceConfirmNonce } = useTillVoice();
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
 
@@ -76,6 +78,29 @@ export default function TillAmountScreen() {
 
     router.dismissTo('/tameio');
   };
+
+  // Spoken amounts ("δεκαεννέα κόμμα επτά") arrive through the voice
+  // context, parsed into the same comma-decimal digit string the keypad
+  // itself produces — writing it in is otherwise identical to a sequence of
+  // keypad presses.
+  useEffect(() => {
+    if (voiceAmountText !== null) {
+      setAmount(voiceAmountText);
+      consumeVoiceAmount();
+    }
+  }, [voiceAmountText, consumeVoiceAmount]);
+
+  // "Έντερ" said aloud presses this screen's own Enter button. Re-running
+  // on every render (not just when the nonce changes) keeps handleConfirm's
+  // closure fresh so it always sees the latest `amount`; the ref guard
+  // below is what actually prevents it from firing more than once per word.
+  const lastConfirmNonceRef = useRef(voiceConfirmNonce);
+  useEffect(() => {
+    if (voiceConfirmNonce !== lastConfirmNonceRef.current) {
+      lastConfirmNonceRef.current = voiceConfirmNonce;
+      handleConfirm();
+    }
+  });
 
   return (
     <ScreenContainer className="p-4">

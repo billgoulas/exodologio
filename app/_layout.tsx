@@ -22,6 +22,7 @@ import { AppProvider, useAppContext } from "@/lib/app-context";
 import { I18nProvider } from "@/lib/i18n-context";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { UserProvider, useUser } from "@/lib/user-context";
+import { TillVoiceProvider } from "@/lib/till-voice-context";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
 const DEFAULT_WEB_FRAME: Rect = { x: 0, y: 0, width: 0, height: 0 };
@@ -63,25 +64,29 @@ function RootLayoutContent({
             {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
             {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
             {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-            <Stack screenOptions={{ headerShown: false }}>
-              {isFirstLaunch ? (
-                <Stack.Screen name="onboarding" />
-              ) : (
-                <>
-                  <Stack.Screen name="(tabs)" />
-                  <Stack.Screen name="add-transaction" />
-                  <Stack.Screen name="edit-transaction" />
-                  <Stack.Screen name="edit-installment" />
-                  <Stack.Screen name="charts-view" />
-                  <Stack.Screen name="till-receipt" />
-                  <Stack.Screen name="till-amount" />
-                  <Stack.Screen name="till-history" />
-                  <Stack.Screen name="till-history-day" />
-                  <Stack.Screen name="till-expenses" />
-                </>
-              )}
-              <Stack.Screen name="oauth/callback" />
-            </Stack>
+            {/* TillVoiceProvider wraps the Stack (not a single screen) so the voice
+                flow's state survives navigation across the tameio/till-* screens. */}
+            <TillVoiceProvider>
+              <Stack screenOptions={{ headerShown: false }}>
+                {isFirstLaunch ? (
+                  <Stack.Screen name="onboarding" />
+                ) : (
+                  <>
+                    <Stack.Screen name="(tabs)" />
+                    <Stack.Screen name="add-transaction" />
+                    <Stack.Screen name="edit-transaction" />
+                    <Stack.Screen name="edit-installment" />
+                    <Stack.Screen name="charts-view" />
+                    <Stack.Screen name="till-receipt" />
+                    <Stack.Screen name="till-amount" />
+                    <Stack.Screen name="till-history" />
+                    <Stack.Screen name="till-history-day" />
+                    <Stack.Screen name="till-expenses" />
+                  </>
+                )}
+                <Stack.Screen name="oauth/callback" />
+              </Stack>
+            </TillVoiceProvider>
             <StatusBar style="auto" />
           </QueryClientProvider>
         </trpc.Provider>

@@ -350,6 +350,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Έξοδα Πλυσίματος',
       summaryPartsExpense: 'Έξοδα Ανταλλακτικών',
       summaryTotalExpenses: 'Σύνολο Εξόδων',
+      voiceListening: 'Ακούει...',
+      voiceSpeaking: 'Μιλάει...',
     },
     paymentMethods: {
       credit_card: 'Πιστωτική Κάρτα',
@@ -652,6 +654,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Wash Expenses',
       summaryPartsExpense: 'Parts Expenses',
       summaryTotalExpenses: 'Total Expenses',
+      voiceListening: 'Listening...',
+      voiceSpeaking: 'Speaking...',
     },
     installment: {
       title: 'Installments',
@@ -989,6 +993,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Dépenses Lavage',
       summaryPartsExpense: 'Dépenses Pièces',
       summaryTotalExpenses: 'Total Dépenses',
+      voiceListening: 'Écoute...',
+      voiceSpeaking: 'Parle...',
     },
     installment: {
       title: 'Acomptes',
@@ -1326,6 +1332,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Waschausgaben',
       summaryPartsExpense: 'Ersatzteilausgaben',
       summaryTotalExpenses: 'Ausgaben Gesamt',
+      voiceListening: 'Hört zu...',
+      voiceSpeaking: 'Spricht...',
     },
     installment: {
       title: 'Raten',
@@ -1663,6 +1671,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Spese Lavaggio',
       summaryPartsExpense: 'Spese Ricambi',
       summaryTotalExpenses: 'Totale Spese',
+      voiceListening: 'Ascolta...',
+      voiceSpeaking: 'Parla...',
     },
     installment: {
       title: 'Rate',
@@ -2001,6 +2011,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Gastos de Lavado',
       summaryPartsExpense: 'Gastos de Repuestos',
       summaryTotalExpenses: 'Total Gastos',
+      voiceListening: 'Escuchando...',
+      voiceSpeaking: 'Hablando...',
     },
     installment: {
       title: 'Cuotas',
@@ -2338,6 +2350,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Расходы на Мойку',
       summaryPartsExpense: 'Расходы на Запчасти',
       summaryTotalExpenses: 'Итого Расходы',
+      voiceListening: 'Слушает...',
+      voiceSpeaking: 'Говорит...',
     },
     installment: {
       title: 'Рассрочки',
@@ -2675,6 +2689,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Shpenzime Larjeje',
       summaryPartsExpense: 'Shpenzime Pjesësh',
       summaryTotalExpenses: 'Total Shpenzimet',
+      voiceListening: 'Po dëgjon...',
+      voiceSpeaking: 'Po flet...',
     },
     installment: {
       title: 'Këste',
@@ -3010,6 +3026,8 @@ export const translations: Translations = {
       summaryWashExpense: 'Разходи за Измиване',
       summaryPartsExpense: 'Разходи за Части',
       summaryTotalExpenses: 'Общо Разходи',
+      voiceListening: 'Слуша...',
+      voiceSpeaking: 'Говори...',
     },
     installment: {
       title: 'Вноски',

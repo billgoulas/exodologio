@@ -55,7 +55,7 @@ const config: ExpoConfig = {
   name: env.appName,
   slug: env.appSlug,
   owner: "pritanis1975",
-  version: "1.1.58",
+  version: "1.1.59",
   orientation: "default",
   icon: "./assets/images/icon.png",
   scheme: env.scheme,
@@ -133,6 +133,13 @@ const config: ExpoConfig = {
       "expo-audio",
       {
         microphonePermission: "Allow $(PRODUCT_NAME) to access your microphone.",
+      },
+    ],
+    [
+      "expo-speech-recognition",
+      {
+        microphonePermission: "Allow $(PRODUCT_NAME) to use the microphone for voice commands in Ταμείο.",
+        speechRecognitionPermission: "Allow $(PRODUCT_NAME) to use speech recognition for voice commands in Ταμείο.",
       },
     ],
     [

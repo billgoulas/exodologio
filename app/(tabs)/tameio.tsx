@@ -1,10 +1,12 @@
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import { ScreenContainer } from '@/components/screen-container';
 import { TillSummaryCard } from '@/components/till-summary-card';
 import { TillEntryRow } from '@/components/till-entry-row';
 import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
+import { useTillVoice } from '@/lib/till-voice-context';
 import { TillMethod } from '@/lib/types';
 import { formatDate, toLocalDateString, formatTime } from '@/lib/utils-calc';
 
@@ -14,8 +16,18 @@ export default function TameioScreen() {
   const router = useRouter();
   const { state, startShift, endShift, deleteTillEntry } = useAppContext();
   const { t, language } = useI18n();
+  const { listening, speaking, resetToTrigger } = useTillVoice();
 
   const { shiftActive, shiftStartedAt, shiftEndedAt, entries, expenses } = state.till;
+
+  // Re-arm the "εγγραφή" trigger whenever this screen regains focus —
+  // covers finishing a transaction by voice, by touch, or cancelling
+  // mid-flow, all of which land back here.
+  useFocusEffect(
+    useCallback(() => {
+      resetToTrigger();
+    }, [resetToTrigger])
+  );
   const currency = state.settings.currency;
   const dateFormat = state.settings.dateFormat;
 
@@ -53,6 +65,11 @@ export default function TameioScreen() {
           {shiftEndedAt && (
             <Text className="text-sm text-muted mt-1">
               {t('till.endShift')}: {formatShiftTimestamp(shiftEndedAt)}
+            </Text>
+          )}
+          {shiftActive && (
+            <Text className="text-xs text-muted mt-1">
+              {speaking ? `🔊 ${t('till.voiceSpeaking')}` : listening ? `🎙️ ${t('till.voiceListening')}` : ''}
             </Text>
           )}
         </View>
