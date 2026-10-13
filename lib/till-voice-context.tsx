@@ -103,14 +103,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       // broken backend.
       ExpoSpeechRecognitionModule.start({
         lang: VOICE_LANG,
-        // This device's recognizer often reports the correct word as an
+        // This device's recognizer often reports the correct word(s) as an
         // interim result and then ends the session in "nomatch" without
         // ever sending a final one — with interimResults:false we were
-        // silently discarding a transcript we'd already correctly heard.
-        // Turn interim results on and act on them for the short keyword
-        // steps (trigger/method/receipt); only the amount step still waits
-        // for a final result, since numbers are more likely to still be
-        // mid-utterance in an interim callback.
+        // silently discarding transcripts we'd already correctly heard.
+        // Interim results are now acted on everywhere, including amount
+        // entry (see the 'result' handler below).
         interimResults: true,
         continuous: false,
         // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is NOT "wait up to this
@@ -291,12 +289,16 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     const transcript = event.results?.[0]?.transcript;
     logDebug(`💬 ${event.isFinal ? 'final' : 'interim'}: "${transcript || ''}"`);
     if (!transcript) return;
-    // Only the amount step requires a final result — a number is more
-    // likely to still be mid-utterance in an interim callback. The
-    // trigger/method/receipt steps act on interim results too, since a
-    // matched keyword immediately advances the step (stopping listening
-    // first), so a stale interim arriving after that has no effect.
-    if (!event.isFinal && stepRef.current === 'amount') return;
+    // This device's recognizer rarely sends a final result at all (most
+    // sessions end in "nomatch" after only interim callbacks), so gating
+    // the amount step on isFinal left it almost never updating. Act on
+    // every result everywhere instead. For amount, Android's interim
+    // transcript for a one-shot session is cumulative ("τέσσερα" →
+    // "τέσσερα κόμμα" → "τέσσερα κόμμα επτά"), so re-parsing it on each
+    // callback naturally updates the keypad field as the user speaks,
+    // digit by digit — exactly like typing it live. The actual entry is
+    // only ever committed on the explicit "Έντερ" word, so a half-spoken
+    // or momentarily-wrong partial amount on screen is harmless.
     handleTranscript(transcript);
   });
 
