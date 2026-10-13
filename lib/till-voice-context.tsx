@@ -25,6 +25,10 @@ interface TillVoiceContextType {
    * Ταμείο screen regains focus, so the flow resets correctly regardless of
    * whether the previous transaction was finished by voice or by touch. */
   resetToTrigger: () => void;
+  /** TEMPORARY: recent recognition events (transcripts/errors), newest
+   * first, shown on-screen to diagnose why a device isn't recognizing
+   * Greek speech. Remove once voice commands are confirmed working. */
+  debugLog: string[];
 }
 
 const TillVoiceContext = createContext<TillVoiceContextType | undefined>(undefined);
@@ -50,6 +54,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const [step, setStepState] = useState<VoiceStep>('idle');
   const [voiceAmountText, setVoiceAmountText] = useState<string | null>(null);
   const [voiceConfirmNonce, setVoiceConfirmNonce] = useState(0);
+  const [debugLog, setDebugLog] = useState<string[]>([]);
+
+  const logDebug = useCallback((line: string) => {
+    setDebugLog((prev) => [line, ...prev].slice(0, 6));
+  }, []);
 
   const stepRef = useRef<VoiceStep>('idle');
   const speakingRef = useRef(false);
@@ -88,8 +97,10 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
     permissionRequestedRef.current = true;
-    ExpoSpeechRecognitionModule.requestPermissionsAsync().catch(() => {});
-  }, [shiftActive]);
+    ExpoSpeechRecognitionModule.requestPermissionsAsync()
+      .then((res) => logDebug(`🔑 permission: granted=${res.granted}`))
+      .catch((err) => logDebug(`🔑 permission error: ${String(err)}`));
+  }, [shiftActive, logDebug]);
 
   // The whole voice flow lives and dies with the shift.
   useEffect(() => {
@@ -105,10 +116,14 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     }
   }, [shiftActive, setStep, startListening, stopListening]);
 
-  useSpeechRecognitionEvent('start', () => setListening(true));
+  useSpeechRecognitionEvent('start', () => {
+    setListening(true);
+    logDebug('▶️ start');
+  });
 
   useSpeechRecognitionEvent('end', () => {
     setListening(false);
+    logDebug('⏹ end');
     // Android speech recognition sessions commonly end on their own (e.g. a
     // few seconds of silence) — restart automatically so listening is
     // effectively continuous for as long as the shift is active.
@@ -117,8 +132,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  useSpeechRecognitionEvent('error', () => {
-    // Swallowed — the 'end' handler above restarts listening.
+  useSpeechRecognitionEvent('error', (event) => {
+    logDebug(`❌ error: ${event.error} ${event.message || ''}`);
+  });
+
+  useSpeechRecognitionEvent('nomatch', () => {
+    logDebug('🤷 nomatch');
   });
 
   const handleTranscript = useCallback(
@@ -189,9 +208,10 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   );
 
   useSpeechRecognitionEvent('result', (event) => {
-    if (!event.isFinal || !event.results?.length) return;
-    const transcript = event.results[0]?.transcript;
-    if (transcript) handleTranscript(transcript);
+    const transcript = event.results?.[0]?.transcript;
+    logDebug(`💬 ${event.isFinal ? 'final' : 'interim'}: "${transcript || ''}"`);
+    if (!event.isFinal || !transcript) return;
+    handleTranscript(transcript);
   });
 
   const consumeVoiceAmount = useCallback(() => setVoiceAmountText(null), []);
@@ -211,6 +231,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     consumeVoiceAmount,
     voiceConfirmNonce,
     resetToTrigger,
+    debugLog,
   };
 
   return <TillVoiceContext.Provider value={value}>{children}</TillVoiceContext.Provider>;
