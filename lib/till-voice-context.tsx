@@ -94,16 +94,17 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       // at least one real device — stick to one-shot sessions and rely on
       // our own 'end'-triggered restart loop below to approximate
       // always-on listening instead.
+      // Forcing androidRecognitionServicePackage to the on-device
+      // "com.google.android.as" service failed with language-not-supported
+      // (no Greek pack installed there) on a real test device — leaving the
+      // package unset (system default) instead produced a clean
+      // start/end/no-speech cycle, so the default IS a working recognizer
+      // for this device; the earlier failures look like timing, not a
+      // broken backend.
       ExpoSpeechRecognitionModule.start({
         lang: VOICE_LANG,
         interimResults: false,
         continuous: false,
-        // On at least one test device, the system's "default" recognition
-        // service resolved to the TTS engine (com.google.android.tts) —
-        // which cannot recognize speech at all, hence permanent "no-speech".
-        // Force the real on-device recognizer instead of trusting the
-        // device's default.
-        androidRecognitionServicePackage: 'com.google.android.as',
       });
       // Watchdog: if a session never produces a single event (same hang as
       // continuous:true above, just in case it recurs some other way),
