@@ -98,6 +98,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         lang: VOICE_LANG,
         interimResults: false,
         continuous: false,
+        // On at least one test device, the system's "default" recognition
+        // service resolved to the TTS engine (com.google.android.tts) —
+        // which cannot recognize speech at all, hence permanent "no-speech".
+        // Force the real on-device recognizer instead of trusting the
+        // device's default.
+        androidRecognitionServicePackage: 'com.google.android.as',
       });
       // Watchdog: if a session never produces a single event (same hang as
       // continuous:true above, just in case it recurs some other way),
