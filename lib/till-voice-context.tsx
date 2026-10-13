@@ -138,11 +138,26 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // this short so short utterances finalize quickly, while still
         // giving a little silence tolerance so a word isn't cut off
         // mid-syllable.
-        androidIntentOptions: {
-          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 1500,
-          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
-          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
-        },
+        // The amount step uses a much shorter silence window: the user
+        // asked for the spoken amount to be read back immediately once
+        // it's written to the keypad, with no perceptible delay. That
+        // readback fires off the recognizer's own 'end' event (see
+        // below), so the sooner Android decides the utterance is
+        // complete, the sooner it's read back. 1200ms was noticeably
+        // laggy for that; 500ms is still enough silence tolerance to not
+        // split a short number like "τέσσερα κόμμα επτά" between words.
+        androidIntentOptions:
+          stepRef.current === 'amount'
+            ? {
+                EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 1500,
+                EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 500,
+                EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 500,
+              }
+            : {
+                EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 1500,
+                EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
+                EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
+              },
       });
       // Watchdog: if a session never produces a single event (same hang as
       // continuous:true above, just in case it recurs some other way),
@@ -273,9 +288,9 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // This only affects what's spoken; the on-screen button still
         // reads "POS".
         await speak('Εφαρμογή');
-        await delay(500);
+        await delay(300);
         await speak('Μετρητά');
-        await delay(500);
+        await delay(300);
         await speak('Πι - Οου - Ες');
         speakingRef.current = false;
         setSpeaking(false);
