@@ -65,6 +65,14 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const shouldListenRef = useRef(false);
   const pendingMethodRef = useRef<TillMethod | null>(null);
   const permissionRequestedRef = useRef(false);
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearWatchdog = useCallback(() => {
+    if (watchdogRef.current) {
+      clearTimeout(watchdogRef.current);
+      watchdogRef.current = null;
+    }
+  }, []);
 
   const setStep = useCallback((next: VoiceStep) => {
     stepRef.current = next;
@@ -74,24 +82,41 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const startListening = useCallback(() => {
     if (!SUPPORTED || !shouldListenRef.current || speakingRef.current) return;
     try {
+      // continuous:true hung indefinitely (no result/error/end at all) on
+      // at least one real device — stick to one-shot sessions and rely on
+      // our own 'end'-triggered restart loop below to approximate
+      // always-on listening instead.
       ExpoSpeechRecognitionModule.start({
         lang: VOICE_LANG,
         interimResults: false,
-        continuous: true,
+        continuous: false,
       });
+      // Watchdog: if a session never produces a single event (same hang as
+      // continuous:true above, just in case it recurs some other way),
+      // force it to restart instead of silently listening forever.
+      clearWatchdog();
+      watchdogRef.current = setTimeout(() => {
+        logDebug('⏱ watchdog: no events, restarting');
+        try {
+          ExpoSpeechRecognitionModule.abort();
+        } catch {
+          // ignore
+        }
+      }, 12000);
     } catch {
       // Will retry on the next 'end' cycle.
     }
-  }, []);
+  }, [clearWatchdog, logDebug]);
 
   const stopListening = useCallback(() => {
     if (!SUPPORTED) return;
+    clearWatchdog();
     try {
       ExpoSpeechRecognitionModule.stop();
     } catch {
       // Already stopped — nothing to do.
     }
-  }, []);
+  }, [clearWatchdog]);
 
   // Request mic/speech permission once, the first time a shift starts.
   useEffect(() => {
@@ -123,6 +148,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
   useSpeechRecognitionEvent('end', () => {
     setListening(false);
+    clearWatchdog();
     logDebug('⏹ end');
     // Android speech recognition sessions commonly end on their own (e.g. a
     // few seconds of silence) — restart automatically so listening is
@@ -133,6 +159,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   });
 
   useSpeechRecognitionEvent('error', (event) => {
+    clearWatchdog();
     logDebug(`❌ error: ${event.error} ${event.message || ''}`);
   });
 
