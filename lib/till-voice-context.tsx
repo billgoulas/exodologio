@@ -105,14 +105,20 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         lang: VOICE_LANG,
         interimResults: false,
         continuous: false,
-        // Give the user more time to start speaking and more silence
-        // tolerance before the recognizer gives up — a device that only
-        // ever reported "no-speech" may just have been cutting the window
-        // too short for a word to land in it.
+        // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is NOT "wait up to this
+        // long for speech" — it's "never finalize a result before this much
+        // time has passed", even if the user already said a single short
+        // word. The previous 15000ms value here was almost certainly the
+        // cause of the "it hears me but with a huge delay" reports: a
+        // 1-word trigger like "εγγραφή" would get stuck for 15 real
+        // seconds before the recognizer was even allowed to finish. Keep
+        // this short so short utterances finalize quickly, while still
+        // giving a little silence tolerance so a word isn't cut off
+        // mid-syllable.
         androidIntentOptions: {
-          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
-          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
-          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
+          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 1500,
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
         },
       });
       // Watchdog: if a session never produces a single event (same hang as
