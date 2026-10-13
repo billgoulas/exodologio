@@ -29,6 +29,9 @@ interface TillVoiceContextType {
    * first, shown on-screen to diagnose why a device isn't recognizing
    * Greek speech. Remove once voice commands are confirmed working. */
   debugLog: string[];
+  /** TEMPORARY: static one-time info (available services, default service)
+   * that must stay visible rather than scroll off with the rolling log. */
+  debugServiceInfo: string[];
 }
 
 const TillVoiceContext = createContext<TillVoiceContextType | undefined>(undefined);
@@ -55,9 +58,14 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const [voiceAmountText, setVoiceAmountText] = useState<string | null>(null);
   const [voiceConfirmNonce, setVoiceConfirmNonce] = useState(0);
   const [debugLog, setDebugLog] = useState<string[]>([]);
+  const [debugServiceInfo, setDebugServiceInfo] = useState<string[]>([]);
 
   const logDebug = useCallback((line: string) => {
     setDebugLog((prev) => [line, ...prev].slice(0, 6));
+  }, []);
+
+  const logServiceInfo = useCallback((line: string) => {
+    setDebugServiceInfo((prev) => [...prev, line]);
   }, []);
 
   const stepRef = useRef<VoiceStep>('idle');
@@ -126,21 +134,21 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
     permissionRequestedRef.current = true;
     ExpoSpeechRecognitionModule.requestPermissionsAsync()
-      .then((res) => logDebug(`🔑 permission: granted=${res.granted}`))
-      .catch((err) => logDebug(`🔑 permission error: ${String(err)}`));
+      .then((res) => logServiceInfo(`🔑 permission: granted=${res.granted}`))
+      .catch((err) => logServiceInfo(`🔑 permission error: ${String(err)}`));
     try {
       const services = ExpoSpeechRecognitionModule.getSpeechRecognitionServices();
-      logDebug(`🧩 services: ${services.length ? services.join(', ') : '(none)'}`);
+      logServiceInfo(`🧩 services: ${services.length ? services.join(', ') : '(none)'}`);
     } catch (err) {
-      logDebug(`🧩 services error: ${String(err)}`);
+      logServiceInfo(`🧩 services error: ${String(err)}`);
     }
     try {
       const def = ExpoSpeechRecognitionModule.getDefaultRecognitionService();
-      logDebug(`🧩 default: ${def.packageName || '(none)'}`);
+      logServiceInfo(`🧩 default: ${def.packageName || '(none)'}`);
     } catch (err) {
-      logDebug(`🧩 default error: ${String(err)}`);
+      logServiceInfo(`🧩 default error: ${String(err)}`);
     }
-  }, [shiftActive, logDebug]);
+  }, [shiftActive, logServiceInfo]);
 
   // The whole voice flow lives and dies with the shift.
   useEffect(() => {
@@ -274,6 +282,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     voiceConfirmNonce,
     resetToTrigger,
     debugLog,
+    debugServiceInfo,
   };
 
   return <TillVoiceContext.Provider value={value}>{children}</TillVoiceContext.Provider>;

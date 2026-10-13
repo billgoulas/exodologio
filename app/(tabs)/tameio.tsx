@@ -16,7 +16,7 @@ export default function TameioScreen() {
   const router = useRouter();
   const { state, startShift, endShift, deleteTillEntry } = useAppContext();
   const { t, language } = useI18n();
-  const { listening, speaking, resetToTrigger, debugLog } = useTillVoice();
+  const { listening, speaking, resetToTrigger, debugLog, debugServiceInfo } = useTillVoice();
 
   const { shiftActive, shiftStartedAt, shiftEndedAt, entries, expenses } = state.till;
 
@@ -73,6 +73,15 @@ export default function TameioScreen() {
             </Text>
           )}
           {/* TEMPORARY debug panel — remove once voice commands are confirmed working */}
+          {shiftActive && debugServiceInfo.length > 0 && (
+            <View className="mt-2 rounded-lg bg-surface border border-border px-2 py-2">
+              {debugServiceInfo.map((line, i) => (
+                <Text key={i} className="text-xs text-primary" numberOfLines={2}>
+                  {line}
+                </Text>
+              ))}
+            </View>
+          )}
           {shiftActive && debugLog.length > 0 && (
             <View className="mt-2 rounded-lg bg-surface border border-border px-2 py-2">
               {debugLog.map((line, i) => (
