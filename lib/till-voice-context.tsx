@@ -111,6 +111,14 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // entry (see the 'result' handler below).
         interimResults: true,
         continuous: false,
+        // The rapid restart-on-end loop now needed for responsiveness
+        // means the (system, not ours) start/end recognizer beep fires
+        // very often while idle, which the user reported as an annoying
+        // constant sound. VOICE_SEARCH_HANDS_FREE is the Android intent
+        // action meant for exactly this kind of always-listening, no-UI
+        // voice flow, so it may suppress those UI/attention beeps where
+        // the default RECOGNIZE_SPEECH action does not.
+        androidIntent: 'android.speech.action.VOICE_SEARCH_HANDS_FREE',
         // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is NOT "wait up to this
         // long for speech" — it's "never finalize a result before this much
         // time has passed", even if the user already said a single short
@@ -230,7 +238,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         setStep('method');
         speakingRef.current = true;
         setSpeaking(true);
-        await speak('Εφαρμογή, μετρητά ή POS;');
+        // Greek TTS reads the Latin "POS" as an unintelligible blob —
+        // spell it out as the Greek names of the letters (Πι, Ου, Ες) so
+        // it's actually understandable, matching how a person would say
+        // "P-O-S" out loud in Greek. This only affects what's spoken; the
+        // on-screen button still reads "POS".
+        await speak('Εφαρμογή, μετρητά ή Πι, Ου, Ες;');
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
