@@ -48,6 +48,10 @@ function speak(text: string): Promise<void> {
   });
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const { state } = useAppContext();
   const shiftActive = state.till.shiftActive;
@@ -261,12 +265,18 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         setStep('method');
         speakingRef.current = true;
         setSpeaking(true);
-        // Greek TTS reads the Latin "POS" as an unintelligible blob —
-        // spell it out as the Greek names of the letters (Πι, Ου, Ες) so
-        // it's actually understandable, matching how a person would say
-        // "P-O-S" out loud in Greek. This only affects what's spoken; the
-        // on-screen button still reads "POS".
-        await speak('Εφαρμογή, μετρητά ή Πι, Ου, Ες;');
+        // Said as three separate utterances with pauses between them,
+        // rather than one sentence, for clarity — and "POS" is spelled
+        // out as Greek letter names ("Πι - Οου - Ες", the extra "ο" in
+        // "Οου" nudges the TTS engine to actually pronounce the letter
+        // "Ου" instead of swallowing it or reading it as the word "ου").
+        // This only affects what's spoken; the on-screen button still
+        // reads "POS".
+        await speak('Εφαρμογή');
+        await delay(500);
+        await speak('Μετρητά');
+        await delay(500);
+        await speak('Πι - Οου - Ες');
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
