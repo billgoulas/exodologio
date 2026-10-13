@@ -105,6 +105,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         lang: VOICE_LANG,
         interimResults: false,
         continuous: false,
+        // Give the user more time to start speaking and more silence
+        // tolerance before the recognizer gives up — a device that only
+        // ever reported "no-speech" may just have been cutting the window
+        // too short for a word to land in it.
+        androidIntentOptions: {
+          EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 15000,
+          EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
+          EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 3000,
+        },
       });
       // Watchdog: if a session never produces a single event (same hang as
       // continuous:true above, just in case it recurs some other way),
@@ -117,7 +126,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         } catch {
           // ignore
         }
-      }, 12000);
+      }, 20000);
     } catch {
       // Will retry on the next 'end' cycle.
     }
@@ -184,7 +193,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     // few seconds of silence) — restart automatically so listening is
     // effectively continuous for as long as the shift is active.
     if (shouldListenRef.current && !speakingRef.current) {
-      setTimeout(() => startListening(), 300);
+      setTimeout(() => startListening(), 600);
     }
   });
 
