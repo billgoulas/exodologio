@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
+import { useKeepAwake } from "expo-keep-awake";
 import "@/lib/_core/nativewind-pressable";
 
 import {
@@ -96,6 +97,12 @@ function RootLayoutContent({
 }
 
 export default function RootLayoutWrapper() {
+  // Keeps the screen on for as long as this component is mounted — i.e. the
+  // whole time the app is running/foregrounded. Once the app is closed or
+  // backgrounded, this has no effect and the device's normal screen-timeout
+  // behavior resumes.
+  useKeepAwake();
+
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
