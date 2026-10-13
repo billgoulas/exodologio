@@ -72,6 +72,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const speakingRef = useRef(false);
   const shouldListenRef = useRef(false);
   const pendingMethodRef = useRef<TillMethod | null>(null);
+  // Tracks the most recent amount parsed during the current amount-step
+  // session, so it can be read back to the user for confirmation once the
+  // recognizer session ends (see the 'end' handler below). Cleared once
+  // read back, or once the user confirms with "Έντερ".
+  const lastSpokenAmountRef = useRef<string | null>(null);
   const permissionRequestedRef = useRef(false);
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -209,12 +214,30 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     setListening(false);
     clearWatchdog();
     logDebug('⏹ end');
+    if (!shouldListenRef.current || speakingRef.current) return;
+
+    // The recognizer session just ended (e.g. the user paused after
+    // saying the amount). If we're still on the amount step and captured
+    // a value during that session, read it back so the user can confirm
+    // it was heard correctly before committing it — rather than
+    // restarting listening silently.
+    if (stepRef.current === 'amount' && lastSpokenAmountRef.current) {
+      const amount = lastSpokenAmountRef.current;
+      lastSpokenAmountRef.current = null;
+      speakingRef.current = true;
+      setSpeaking(true);
+      speak(`Ποσό ${amount}. Για επιβεβαίωση του ποσού πείτε Έντερ.`).then(() => {
+        speakingRef.current = false;
+        setSpeaking(false);
+        startListening();
+      });
+      return;
+    }
+
     // Android speech recognition sessions commonly end on their own (e.g. a
     // few seconds of silence) — restart automatically so listening is
     // effectively continuous for as long as the shift is active.
-    if (shouldListenRef.current && !speakingRef.current) {
-      setTimeout(() => startListening(), 600);
-    }
+    setTimeout(() => startListening(), 600);
   });
 
   useSpeechRecognitionEvent('error', (event) => {
@@ -254,7 +277,18 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         let method: TillMethod | null = null;
         if (words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         else if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
-        else if (words.includes('pos') || words.includes('ποσ')) method = 'appointment';
+        // The app itself now asks for this option by spelling out the
+        // Greek letter names ("Πι, Ου, Ες"), since TTS can't pronounce the
+        // Latin "POS" — so the user's reply is expected to echo that same
+        // spelling, not the single word "POS"/"ΠΟΣ". Still accept the
+        // single-word form too, in case the recognizer transcribes it that
+        // way instead of as separate letters.
+        else if (
+          words.includes('pos') ||
+          words.includes('ποσ') ||
+          (words.includes('πι') && words.includes('ες'))
+        )
+          method = 'appointment';
         if (!method) return;
 
         pendingMethodRef.current = method;
@@ -288,11 +322,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
       if (currentStep === 'amount') {
         if (words.some((w) => w.startsWith('εντερ')) || words.includes('enter')) {
+          lastSpokenAmountRef.current = null;
           setVoiceConfirmNonce((n) => n + 1);
           return;
         }
         const parsed = parseSpokenAmount(rawTranscript);
-        if (parsed) setVoiceAmountText(parsed);
+        if (parsed) {
+          setVoiceAmountText(parsed);
+          lastSpokenAmountRef.current = parsed;
+        }
       }
     },
     [setStep, startListening, stopListening]
