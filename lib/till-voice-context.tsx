@@ -103,7 +103,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       // broken backend.
       ExpoSpeechRecognitionModule.start({
         lang: VOICE_LANG,
-        interimResults: false,
+        // This device's recognizer often reports the correct word as an
+        // interim result and then ends the session in "nomatch" without
+        // ever sending a final one — with interimResults:false we were
+        // silently discarding a transcript we'd already correctly heard.
+        // Turn interim results on and act on them for the short keyword
+        // steps (trigger/method/receipt); only the amount step still waits
+        // for a final result, since numbers are more likely to still be
+        // mid-utterance in an interim callback.
+        interimResults: true,
         continuous: false,
         // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is NOT "wait up to this
         // long for speech" — it's "never finalize a result before this much
@@ -282,7 +290,13 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   useSpeechRecognitionEvent('result', (event) => {
     const transcript = event.results?.[0]?.transcript;
     logDebug(`💬 ${event.isFinal ? 'final' : 'interim'}: "${transcript || ''}"`);
-    if (!event.isFinal || !transcript) return;
+    if (!transcript) return;
+    // Only the amount step requires a final result — a number is more
+    // likely to still be mid-utterance in an interim callback. The
+    // trigger/method/receipt steps act on interim results too, since a
+    // matched keyword immediately advances the step (stopping listening
+    // first), so a stale interim arriving after that has no effect.
+    if (!event.isFinal && stepRef.current === 'amount') return;
     handleTranscript(transcript);
   });
 
