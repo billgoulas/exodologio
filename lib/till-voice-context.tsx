@@ -118,13 +118,28 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     }
   }, [clearWatchdog]);
 
-  // Request mic/speech permission once, the first time a shift starts.
+  // Request mic/speech permission once, the first time a shift starts, and
+  // log what speech recognition services this device actually has — the
+  // "service-not-allowed" error points at the backing service, not our own
+  // app permission, so this tells us what's really available on-device.
   useEffect(() => {
     if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
     permissionRequestedRef.current = true;
     ExpoSpeechRecognitionModule.requestPermissionsAsync()
       .then((res) => logDebug(`🔑 permission: granted=${res.granted}`))
       .catch((err) => logDebug(`🔑 permission error: ${String(err)}`));
+    try {
+      const services = ExpoSpeechRecognitionModule.getSpeechRecognitionServices();
+      logDebug(`🧩 services: ${services.length ? services.join(', ') : '(none)'}`);
+    } catch (err) {
+      logDebug(`🧩 services error: ${String(err)}`);
+    }
+    try {
+      const def = ExpoSpeechRecognitionModule.getDefaultRecognitionService();
+      logDebug(`🧩 default: ${def.packageName || '(none)'}`);
+    } catch (err) {
+      logDebug(`🧩 default error: ${String(err)}`);
+    }
   }, [shiftActive, logDebug]);
 
   // The whole voice flow lives and dies with the shift.
