@@ -25,13 +25,6 @@ interface TillVoiceContextType {
    * Ταμείο screen regains focus, so the flow resets correctly regardless of
    * whether the previous transaction was finished by voice or by touch. */
   resetToTrigger: () => void;
-  /** TEMPORARY: recent recognition events (transcripts/errors), newest
-   * first, shown on-screen to diagnose why a device isn't recognizing
-   * Greek speech. Remove once voice commands are confirmed working. */
-  debugLog: string[];
-  /** TEMPORARY: static one-time info (available services, default service)
-   * that must stay visible rather than scroll off with the rolling log. */
-  debugServiceInfo: string[];
 }
 
 const TillVoiceContext = createContext<TillVoiceContextType | undefined>(undefined);
@@ -57,16 +50,6 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const [step, setStepState] = useState<VoiceStep>('idle');
   const [voiceAmountText, setVoiceAmountText] = useState<string | null>(null);
   const [voiceConfirmNonce, setVoiceConfirmNonce] = useState(0);
-  const [debugLog, setDebugLog] = useState<string[]>([]);
-  const [debugServiceInfo, setDebugServiceInfo] = useState<string[]>([]);
-
-  const logDebug = useCallback((line: string) => {
-    setDebugLog((prev) => [line, ...prev].slice(0, 6));
-  }, []);
-
-  const logServiceInfo = useCallback((line: string) => {
-    setDebugServiceInfo((prev) => [...prev, line]);
-  }, []);
 
   const stepRef = useRef<VoiceStep>('idle');
   const speakingRef = useRef(false);
@@ -160,7 +143,6 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       // force it to restart instead of silently listening forever.
       clearWatchdog();
       watchdogRef.current = setTimeout(() => {
-        logDebug('⏱ watchdog: no events, restarting');
         try {
           ExpoSpeechRecognitionModule.abort();
         } catch {
@@ -170,7 +152,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     } catch {
       // Will retry on the next 'end' cycle.
     }
-  }, [clearWatchdog, logDebug]);
+  }, [clearWatchdog]);
 
   const stopListening = useCallback(() => {
     if (!SUPPORTED) return;
@@ -182,29 +164,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     }
   }, [clearWatchdog]);
 
-  // Request mic/speech permission once, the first time a shift starts, and
-  // log what speech recognition services this device actually has — the
-  // "service-not-allowed" error points at the backing service, not our own
-  // app permission, so this tells us what's really available on-device.
+  // Request mic/speech permission once, the first time a shift starts.
   useEffect(() => {
     if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
     permissionRequestedRef.current = true;
-    ExpoSpeechRecognitionModule.requestPermissionsAsync()
-      .then((res) => logServiceInfo(`🔑 permission: granted=${res.granted}`))
-      .catch((err) => logServiceInfo(`🔑 permission error: ${String(err)}`));
-    try {
-      const services = ExpoSpeechRecognitionModule.getSpeechRecognitionServices();
-      logServiceInfo(`🧩 services: ${services.length ? services.join(', ') : '(none)'}`);
-    } catch (err) {
-      logServiceInfo(`🧩 services error: ${String(err)}`);
-    }
-    try {
-      const def = ExpoSpeechRecognitionModule.getDefaultRecognitionService();
-      logServiceInfo(`🧩 default: ${def.packageName || '(none)'}`);
-    } catch (err) {
-      logServiceInfo(`🧩 default error: ${String(err)}`);
-    }
-  }, [shiftActive, logServiceInfo]);
+    ExpoSpeechRecognitionModule.requestPermissionsAsync().catch(() => {
+      // If permission is denied, voice commands simply won't trigger;
+      // touch-based entry still works.
+    });
+  }, [shiftActive]);
 
   // The whole voice flow lives and dies with the shift.
   useEffect(() => {
@@ -222,13 +190,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
   useSpeechRecognitionEvent('start', () => {
     setListening(true);
-    logDebug('▶️ start');
   });
 
   useSpeechRecognitionEvent('end', () => {
     setListening(false);
     clearWatchdog();
-    logDebug('⏹ end');
     if (!shouldListenRef.current || speakingRef.current) return;
 
     // The recognizer session just ended (e.g. the user paused after
@@ -255,13 +221,8 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     setTimeout(() => startListening(), 600);
   });
 
-  useSpeechRecognitionEvent('error', (event) => {
+  useSpeechRecognitionEvent('error', () => {
     clearWatchdog();
-    logDebug(`❌ error: ${event.error} ${event.message || ''}`);
-  });
-
-  useSpeechRecognitionEvent('nomatch', () => {
-    logDebug('🤷 nomatch');
   });
 
   const handleTranscript = useCallback(
@@ -355,7 +316,6 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
   useSpeechRecognitionEvent('result', (event) => {
     const transcript = event.results?.[0]?.transcript;
-    logDebug(`💬 ${event.isFinal ? 'final' : 'interim'}: "${transcript || ''}"`);
     if (!transcript) return;
     // This device's recognizer rarely sends a final result at all (most
     // sessions end in "nomatch" after only interim callbacks), so gating
@@ -387,8 +347,6 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     consumeVoiceAmount,
     voiceConfirmNonce,
     resetToTrigger,
-    debugLog,
-    debugServiceInfo,
   };
 
   return <TillVoiceContext.Provider value={value}>{children}</TillVoiceContext.Provider>;
