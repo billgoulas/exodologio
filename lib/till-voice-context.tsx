@@ -237,20 +237,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         setStep('method');
         speakingRef.current = true;
         setSpeaking(true);
-        // "POS" is spelled out as Greek letter names (the extra "ο" in
-        // "Οου" nudges the TTS engine to actually pronounce the letter
-        // "Ου" instead of swallowing it or reading it as the word "ου")
-        // since Greek TTS can't read the Latin "POS" at all. The three
-        // letters are said back-to-back with no artificial gap between
-        // them — each `speak` call still only resolves once the previous
-        // utterance finishes, so this is the shortest gap the TTS engine
-        // allows. This only affects what's spoken; the on-screen button
-        // still reads "POS".
-        await speak('Πείτε Εφαρμογή, Μετρητά, ή');
-        await speak('Πι');
-        await speak('Οου');
-        await speak('Ες');
-        await speak('για να επιλέξετε την κατάλληλη συναλλαγή.');
+        // "POS" is spelled out as the Greek letter names fused into one
+        // word ("πιοουες") since Greek TTS can't read the Latin "POS" at
+        // all, and reading the three letters as separate utterances (even
+        // back-to-back) still left an audible gap between them. This only
+        // affects what's spoken; the on-screen button still reads "POS".
+        await speak('Πείτε Εφαρμογή, Μετρητά, ή πιοουες, για να επιλέξετε την κατάλληλη συναλλαγή.');
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
@@ -261,15 +253,16 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         let method: TillMethod | null = null;
         if (words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         else if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
-        // The app itself now asks for this option by spelling out the
-        // Greek letter names ("Πι, Ου, Ες"), since TTS can't pronounce the
-        // Latin "POS" — so the user's reply is expected to echo that same
-        // spelling, not the single word "POS"/"ΠΟΣ". Still accept the
-        // single-word form too, in case the recognizer transcribes it that
-        // way instead of as separate letters.
+        // The app itself now asks for this option by saying the Greek
+        // letter names fused into one word ("πιοουες"), since TTS can't
+        // pronounce the Latin "POS" — so the user's reply is expected to
+        // echo that. Also accept "POS"/"ΠΟΣ" as a single word and the
+        // letters spoken separately ("πι" + "ες"), in case the recognizer
+        // transcribes it differently.
         else if (
           words.includes('pos') ||
           words.includes('ποσ') ||
+          words.some((w) => w.startsWith('πιοουες') || w.startsWith('πιουες')) ||
           (words.includes('πι') && words.includes('ες'))
         )
           method = 'appointment';
