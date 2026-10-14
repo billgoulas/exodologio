@@ -237,12 +237,13 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         setStep('method');
         speakingRef.current = true;
         setSpeaking(true);
-        // "POS" is spelled out as the Greek letter names fused into one
-        // word ("πιοουες") since Greek TTS can't read the Latin "POS" at
-        // all, and reading the three letters as separate utterances (even
-        // back-to-back) still left an audible gap between them. This only
-        // affects what's spoken; the on-screen button still reads "POS".
-        await speak('Πείτε Εφαρμογή, Μετρητά, ή πιοουες, για να επιλέξετε την κατάλληλη συναλλαγή.');
+        // "POS" is spelled out as the Greek letter names, accented
+        // ("πί όου Ες") so the TTS engine stresses the right syllables —
+        // Greek TTS can't read the Latin "POS" at all, and the unaccented
+        // fused spelling ("πιοουες") came out with the wrong stress.
+        // This only affects what's spoken; the on-screen button still
+        // reads "POS".
+        await speak('Πείτε Εφαρμογή, Μετρητά, ή πί όου Ες, για να επιλέξετε την κατάλληλη συναλλαγή.');
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
@@ -253,12 +254,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         let method: TillMethod | null = null;
         if (words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         else if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
-        // The app itself now asks for this option by saying the Greek
-        // letter names fused into one word ("πιοουες"), since TTS can't
-        // pronounce the Latin "POS" — so the user's reply is expected to
-        // echo that. Also accept "POS"/"ΠΟΣ" as a single word and the
-        // letters spoken separately ("πι" + "ες"), in case the recognizer
-        // transcribes it differently.
+        // The app itself now asks for this option by saying the accented
+        // Greek letter names ("πί όου Ες"), since TTS can't pronounce the
+        // Latin "POS" — so the user's reply is expected to echo that
+        // (normalizeGreek strips the accents before this check runs). Also
+        // accept "POS"/"ΠΟΣ" as a single word and the fused spelling, in
+        // case the recognizer transcribes it differently.
         else if (
           words.includes('pos') ||
           words.includes('ποσ') ||
