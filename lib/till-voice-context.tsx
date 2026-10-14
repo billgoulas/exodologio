@@ -177,13 +177,22 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     });
   }, [shiftActive]);
 
-  // The whole voice flow lives and dies with the shift.
+  // The whole voice flow lives and dies with the shift. On start, announce
+  // the trigger word once before listening begins — this effect only
+  // re-runs when shiftActive actually flips, so it naturally fires once
+  // per shift start, not on every render.
   useEffect(() => {
     if (!SUPPORTED) return;
     if (shiftActive) {
       shouldListenRef.current = true;
       setStep('trigger');
-      startListening();
+      speakingRef.current = true;
+      setSpeaking(true);
+      speak('Αν θέλετε να κάνετε καταχώρηση μίας νέας εγγραφής πείτε εγγραφή.').then(() => {
+        speakingRef.current = false;
+        setSpeaking(false);
+        startListening();
+      });
     } else {
       shouldListenRef.current = false;
       setStep('idle');
