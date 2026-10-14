@@ -107,24 +107,27 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // voice flow, so it may suppress those UI/attention beeps where
         // the default RECOGNIZE_SPEECH action does not.
         androidIntent: 'android.speech.action.VOICE_SEARCH_HANDS_FREE',
-        // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is NOT "wait up to this
-        // long for speech" — it's "never finalize a result before this much
-        // time has passed", even if the user already said a single short
-        // word. The previous 15000ms value here was almost certainly the
-        // cause of the "it hears me but with a huge delay" reports: a
-        // 1-word trigger like "εγγραφή" would get stuck for 15 real
-        // seconds before the recognizer was even allowed to finish. Keep
-        // this short so short utterances finalize quickly, while still
-        // giving a little silence tolerance so a word isn't cut off
-        // mid-syllable.
-        // The amount step uses a much shorter silence window: the user
-        // asked for the spoken amount to be read back immediately once
-        // it's written to the keypad, with no perceptible delay. That
-        // readback fires off the recognizer's own 'end' event (see
-        // below), so the sooner Android decides the utterance is
-        // complete, the sooner it's read back. 1200ms was noticeably
-        // laggy for that; 500ms is still enough silence tolerance to not
-        // split a short number like "τέσσερα κόμμα επτά" between words.
+        // EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS is a floor on how long
+        // Android will keep a session open before it's allowed to decide
+        // "no speech" and end it on its own — it does NOT delay reacting
+        // to real speech. That only used to be true back when we only
+        // acted on *final* results (gated behind this same floor); now
+        // that trigger/method/receipt act on *interim* results and call
+        // our own stopListening() the instant a keyword is heard, a real
+        // match is never held up by this value.
+        // That means it's safe to raise it a lot for the idle waiting
+        // steps, and doing so directly fixes the "constant beep" problem:
+        // every session that ends on its own (e.g. "no speech" while
+        // nobody is talking) triggers Android's start/end UI sound on
+        // restart, and at 1500ms minimum that was happening every few
+        // seconds while just waiting. 10000ms means roughly 1/6th as many
+        // idle restarts — and so 1/6th as many beeps — with no added lag
+        // for an actual "εγγραφή"/method/receipt answer.
+        // The amount step keeps its own short, snappy settings: the user
+        // asked for the spoken amount to be read back immediately with no
+        // perceptible delay, and that readback fires off the recognizer's
+        // own 'end' event, so a long floor there would reintroduce exactly
+        // the lag that was fixed earlier.
         androidIntentOptions:
           stepRef.current === 'amount'
             ? {
@@ -133,7 +136,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
                 EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 500,
               }
             : {
-                EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 1500,
+                EXTRA_SPEECH_INPUT_MINIMUM_LENGTH_MILLIS: 10000,
                 EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
                 EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS: 1200,
               },
