@@ -210,7 +210,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       lastSpokenAmountRef.current = null;
       speakingRef.current = true;
       setSpeaking(true);
-      speak(`Ποσό ${amount}. Για επιβεβαίωση του ποσού πείτε Έντερ.`).then(() => {
+      speak(`Το ποσό που καταχωρήσατε είναι ${amount} ευρώ. Για επιβεβαίωση πείτε Έντερ.`).then(() => {
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
@@ -297,6 +297,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           params: { method: pendingMethodRef.current, receipt: receipt ? '1' : '0' },
         });
         setStep('amount');
+        speakingRef.current = true;
+        setSpeaking(true);
+        await speak('Πείτε το ποσό συναλλαγής.');
+        speakingRef.current = false;
+        setSpeaking(false);
         startListening();
         return;
       }
