@@ -62,11 +62,23 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const lastSpokenAmountRef = useRef<string | null>(null);
   const permissionRequestedRef = useRef(false);
   const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Fires a short time after the last successfully-parsed amount update,
+  // forcing the recognizer session to end right away instead of waiting on
+  // Android's own silence/minimum-length timers (see the amount branch of
+  // handleTranscript below for why this cuts the readback delay a lot).
+  const amountSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearWatchdog = useCallback(() => {
     if (watchdogRef.current) {
       clearTimeout(watchdogRef.current);
       watchdogRef.current = null;
+    }
+  }, []);
+
+  const clearAmountSettleTimer = useCallback(() => {
+    if (amountSettleTimerRef.current) {
+      clearTimeout(amountSettleTimerRef.current);
+      amountSettleTimerRef.current = null;
     }
   }, []);
 
@@ -77,6 +89,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
   const startListening = useCallback(() => {
     if (!SUPPORTED || !shouldListenRef.current || speakingRef.current) return;
+    clearAmountSettleTimer();
     try {
       // continuous:true hung indefinitely (no result/error/end at all) on
       // at least one real device — stick to one-shot sessions and rely on
@@ -155,7 +168,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     } catch {
       // Will retry on the next 'end' cycle.
     }
-  }, [clearWatchdog]);
+  }, [clearWatchdog, clearAmountSettleTimer]);
 
   const stopListening = useCallback(() => {
     if (!SUPPORTED) return;
@@ -207,6 +220,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   useSpeechRecognitionEvent('end', () => {
     setListening(false);
     clearWatchdog();
+    clearAmountSettleTimer();
     if (!shouldListenRef.current || speakingRef.current) return;
 
     // The recognizer session just ended (e.g. the user paused after
@@ -317,6 +331,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
       if (currentStep === 'amount') {
         if (words.some((w) => w.startsWith('εντερ')) || words.includes('enter')) {
+          clearAmountSettleTimer();
           lastSpokenAmountRef.current = null;
           setVoiceConfirmNonce((n) => n + 1);
           return;
@@ -325,10 +340,21 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         if (parsed) {
           setVoiceAmountText(parsed);
           lastSpokenAmountRef.current = parsed;
+          // Don't wait for Android's own silence/minimum-length timers to
+          // decide the utterance is complete (that floor is what was
+          // making the "what did I hear" readback feel so slow) — force
+          // the session to end shortly after the last update instead, so
+          // the readback fires almost immediately once the user stops
+          // speaking the number. Each new parsed update pushes this back,
+          // so it only fires once speech has actually paused.
+          clearAmountSettleTimer();
+          amountSettleTimerRef.current = setTimeout(() => {
+            stopListening();
+          }, 400);
         }
       }
     },
-    [setStep, startListening, stopListening]
+    [setStep, startListening, stopListening, clearAmountSettleTimer]
   );
 
   useSpeechRecognitionEvent('result', (event) => {
