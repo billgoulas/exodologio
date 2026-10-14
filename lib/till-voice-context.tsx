@@ -41,6 +41,10 @@ function speak(text: string): Promise<void> {
   });
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const { state } = useAppContext();
   const shiftActive = state.till.shiftActive;
@@ -237,14 +241,23 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         setStep('method');
         speakingRef.current = true;
         setSpeaking(true);
-        // "POS" is spelled out as Greek letter names ("Πι, Οου, Ες" — the
-        // extra "ο" in "Οου" nudges the TTS engine to actually pronounce
-        // the letter "Ου" instead of swallowing it or reading it as the
-        // word "ου") since Greek TTS can't read the Latin "POS" at all.
-        // Commas around it keep a small natural pause so it stays
-        // distinct from the words around it. This only affects what's
+        // "POS" is spelled out as Greek letter names (the extra "ο" in
+        // "Οου" nudges the TTS engine to actually pronounce the letter
+        // "Ου" instead of swallowing it or reading it as the word "ου")
+        // since Greek TTS can't read the Latin "POS" at all. The gap
+        // between those three letters previously came from commas inside
+        // one sentence, whose pause length isn't something we control —
+        // it's now three separate utterances with an explicit 150ms gap
+        // (half of the roughly ~300ms a comma pause was giving) so the
+        // timing is both shorter and tunable. This only affects what's
         // spoken; the on-screen button still reads "POS".
-        await speak('Πείτε Εφαρμογή, Μετρητά, ή Πι, Οου, Ες, για να επιλέξετε την κατάλληλη συναλλαγή.');
+        await speak('Πείτε Εφαρμογή, Μετρητά, ή');
+        await speak('Πι');
+        await delay(150);
+        await speak('Οου');
+        await delay(150);
+        await speak('Ες');
+        await speak('για να επιλέξετε την κατάλληλη συναλλαγή.');
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
