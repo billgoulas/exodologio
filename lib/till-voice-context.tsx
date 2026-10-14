@@ -41,10 +41,6 @@ function speak(text: string): Promise<void> {
   });
 }
 
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const { state } = useAppContext();
   const shiftActive = state.till.shiftActive;
@@ -244,18 +240,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // "POS" is spelled out as Greek letter names (the extra "ο" in
         // "Οου" nudges the TTS engine to actually pronounce the letter
         // "Ου" instead of swallowing it or reading it as the word "ου")
-        // since Greek TTS can't read the Latin "POS" at all. The gap
-        // between those three letters previously came from commas inside
-        // one sentence, whose pause length isn't something we control —
-        // it's now three separate utterances with an explicit 150ms gap
-        // (half of the roughly ~300ms a comma pause was giving) so the
-        // timing is both shorter and tunable. This only affects what's
-        // spoken; the on-screen button still reads "POS".
+        // since Greek TTS can't read the Latin "POS" at all. The three
+        // letters are said back-to-back with no artificial gap between
+        // them — each `speak` call still only resolves once the previous
+        // utterance finishes, so this is the shortest gap the TTS engine
+        // allows. This only affects what's spoken; the on-screen button
+        // still reads "POS".
         await speak('Πείτε Εφαρμογή, Μετρητά, ή');
         await speak('Πι');
-        await delay(150);
         await speak('Οου');
-        await delay(150);
         await speak('Ες');
         await speak('για να επιλέξετε την κατάλληλη συναλλαγή.');
         speakingRef.current = false;
