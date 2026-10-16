@@ -14,6 +14,18 @@ const VOICE_LANG = 'el-GR';
 // simply a no-op there.
 const SUPPORTED = Platform.OS !== 'web';
 
+// Appended to every prompt spoken on a screen that was actually navigated
+// to (method/appMethod/receipt/amount all push a real route), so the user
+// can always back out by voice. Not appended to the very first prompt
+// (after "εγγραφή", still on the home Ταμείο screen) since there's no
+// previous screen to go back to from there.
+const BACK_HINT = 'Εάν θέλετε να μεταφερθείτε στην προηγούμενη καρτέλα πείτε Προηγούμενη.';
+const METHOD_PROMPT =
+  'Για πληρωμή με εφαρμογή πείτε Εφαρμογή, για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες.';
+const APP_METHOD_PROMPT = `Για πληρωμή μέσα στην εφαρμογή πείτε APPLICATION, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με μετρητά πείτε Μετρητά. ${BACK_HINT}`;
+const RECEIPT_PROMPT = `Με απόδειξη ή χωρίς απόδειξη; ${BACK_HINT}`;
+const AMOUNT_PROMPT = `Πείτε το ποσό συναλλαγής. ${BACK_HINT}`;
+
 interface TillVoiceContextType {
   listening: boolean;
   speaking: boolean;
@@ -55,6 +67,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const speakingRef = useRef(false);
   const shouldListenRef = useRef(false);
   const pendingMethodRef = useRef<TillMethod | null>(null);
+  // Records the step we're leaving each time we actually push a new
+  // screen (method -> appMethod/receipt, appMethod -> receipt, receipt ->
+  // amount), so the "Προηγούμενη" voice command can pop back to exactly
+  // that step/screen. Steps that don't push a screen (trigger -> method,
+  // both on the home Ταμείο screen) never get pushed onto this.
+  const stepHistoryRef = useRef<VoiceStep[]>([]);
   // Tracks the most recent amount parsed during the current amount-step
   // session, so it can be read back to the user for confirmation once the
   // recognizer session ends (see the 'end' handler below). Cleared once
@@ -217,6 +235,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
   // per shift start, not on every render.
   useEffect(() => {
     if (!SUPPORTED) return;
+    stepHistoryRef.current = [];
     if (shiftActive) {
       shouldListenRef.current = true;
       setStep('trigger');
@@ -266,6 +285,32 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       const words = normalized.split(/\s+/).filter(Boolean);
       const currentStep = stepRef.current;
 
+      // Universal "go back" command, works from any step that was reached
+      // by actually pushing a screen (appMethod/receipt/amount). Popping
+      // back to 'method' lands on the home Ταμείο screen, whose own focus
+      // effect (resetToTrigger) re-arms listening on its own, so nothing
+      // further is needed there.
+      if (words.some((w) => w.startsWith('προηγουμεν'))) {
+        const previous = stepHistoryRef.current.pop();
+        if (previous) {
+          stopListening();
+          if (currentStep === 'amount') {
+            clearAmountSettleTimer();
+            lastSpokenAmountRef.current = null;
+            setVoiceAmountText(null);
+          }
+          router.back();
+          if (previous === 'appMethod') {
+            setStep('appMethod');
+            await speakThenListen(APP_METHOD_PROMPT);
+          } else if (previous === 'receipt') {
+            setStep('receipt');
+            await speakThenListen(RECEIPT_PROMPT);
+          }
+          return;
+        }
+      }
+
       if (currentStep === 'trigger') {
         if (!words.some((w) => w.startsWith('εγγραφ'))) return;
         stopListening();
@@ -278,10 +323,10 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // "POS". This first screen's three options are Εφαρμογή, Μετρητά,
         // POS — "Εφαρμογή" is not itself a final payment method, it's a
         // category that opens a second screen (see the 'method' branch
-        // below) asking how that app order was actually settled.
-        await speakThenListen(
-          'Για πληρωμή με εφαρμογή πείτε Εφαρμογή, για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες.'
-        );
+        // below) asking how that app order was actually settled. No "go
+        // back" hint here — trigger/method both live on the home Ταμείο
+        // screen, so there's no previous screen to go back to yet.
+        await speakThenListen(METHOD_PROMPT);
         return;
       }
 
@@ -309,19 +354,19 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // itself. "Μετρητά"/"POS" chosen directly here ARE final.
         if (method === 'app') {
           stopListening();
+          stepHistoryRef.current.push('method');
           router.push('/till-app-method');
           setStep('appMethod');
-          await speakThenListen(
-            'Για πληρωμή μέσα στην εφαρμογή πείτε APP, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με μετρητά πείτε Μετρητά.'
-          );
+          await speakThenListen(APP_METHOD_PROMPT);
           return;
         }
 
         pendingMethodRef.current = method;
         stopListening();
+        stepHistoryRef.current.push('method');
         router.push({ pathname: '/till-receipt', params: { method } });
         setStep('receipt');
-        await speakThenListen('Με απόδειξη ή χωρίς απόδειξη;');
+        await speakThenListen(RECEIPT_PROMPT);
         return;
       }
 
@@ -335,24 +380,25 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           (words.includes('πι') && words.includes('ες'))
         )
           method = 'appointment';
-        // This screen's third option is announced and answered as "APP"
-        // only — NOT the "εφαρμογ" stem. That stem is what the FIRST
-        // screen matches to get here in the first place, and recognizer
-        // sessions sometimes deliver one more (stale, already-finalizing)
-        // "Εφαρμογή" result right after we've already transitioned to
-        // this step — if this branch also accepted "εφαρμογ", that stale
-        // leftover event would immediately match here too and skip ahead
-        // to the receipt screen on its own, which is exactly the bug
-        // where saying "Εφαρμογή" opened both this screen and the receipt
-        // screen at once.
-        else if (words.includes('app')) method = 'app';
+        // This screen's third option is announced and answered as
+        // "APPLICATION" (or the shorter "app") only — NOT the "εφαρμογ"
+        // stem. That stem is what the FIRST screen matches to get here in
+        // the first place, and recognizer sessions sometimes deliver one
+        // more (stale, already-finalizing) "Εφαρμογή" result right after
+        // we've already transitioned to this step — if this branch also
+        // accepted "εφαρμογ", that stale leftover event would immediately
+        // match here too and skip ahead to the receipt screen on its own,
+        // which is exactly the bug where saying "Εφαρμογή" opened both
+        // this screen and the receipt screen at once.
+        else if (words.includes('application') || words.includes('app')) method = 'app';
         if (!method) return;
 
         pendingMethodRef.current = method;
         stopListening();
+        stepHistoryRef.current.push('appMethod');
         router.push({ pathname: '/till-receipt', params: { method } });
         setStep('receipt');
-        await speakThenListen('Με απόδειξη ή χωρίς απόδειξη;');
+        await speakThenListen(RECEIPT_PROMPT);
         return;
       }
 
@@ -363,12 +409,13 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         if (receipt === null || !pendingMethodRef.current) return;
 
         stopListening();
+        stepHistoryRef.current.push('receipt');
         router.push({
           pathname: '/till-amount',
           params: { method: pendingMethodRef.current, receipt: receipt ? '1' : '0' },
         });
         setStep('amount');
-        await speakThenListen('Πείτε το ποσό συναλλαγής.');
+        await speakThenListen(AMOUNT_PROMPT);
         return;
       }
 
@@ -420,6 +467,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
   const resetToTrigger = useCallback(() => {
     pendingMethodRef.current = null;
+    stepHistoryRef.current = [];
     if (!shouldListenRef.current) return;
     setStep('trigger');
     startListening();

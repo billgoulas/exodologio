@@ -325,7 +325,7 @@ export const translations: Translations = {
       startShift: 'Έναρξη Βάρδιας',
       endShift: 'Λήξη Βάρδιας',
       app: 'Εφαρμογή',
-      appPayment: 'APP',
+      appPayment: 'APPLICATION',
       cash: 'Μετρητά',
       appointment: 'POS',
       withReceipt: 'Με Απόδειξη',
