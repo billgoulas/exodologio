@@ -336,10 +336,16 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         )
           method = 'appointment';
         // This screen's third option is announced and answered as "APP"
-        // (not "Εφαρμογή"), to distinguish it from the first screen's
-        // "Εφαρμογή" category — but still accept the Greek stem too, in
-        // case habit or the recognizer produces it instead.
-        else if (words.includes('app') || words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
+        // only — NOT the "εφαρμογ" stem. That stem is what the FIRST
+        // screen matches to get here in the first place, and recognizer
+        // sessions sometimes deliver one more (stale, already-finalizing)
+        // "Εφαρμογή" result right after we've already transitioned to
+        // this step — if this branch also accepted "εφαρμογ", that stale
+        // leftover event would immediately match here too and skip ahead
+        // to the receipt screen on its own, which is exactly the bug
+        // where saying "Εφαρμογή" opened both this screen and the receipt
+        // screen at once.
+        else if (words.includes('app')) method = 'app';
         if (!method) return;
 
         pendingMethodRef.current = method;
