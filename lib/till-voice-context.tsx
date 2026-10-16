@@ -180,6 +180,27 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     }
   }, [clearWatchdog]);
 
+  // Speaks a prompt, then re-arms the microphone. Speech.speak's onDone can
+  // fire slightly before the audio has actually finished coming out of the
+  // speaker — starting to listen immediately after let the device pick up
+  // the tail of its own voice (e.g. "...πείτε Μετρητά.") and treat the
+  // last word as the user's answer, instantly skipping ahead a step (this
+  // is what caused saying "Εφαρμογή" to also immediately open the receipt
+  // screen, as if "Μετρητά" had already been answered too). A short pause
+  // after speaking lets any residual audio clear before the mic re-arms.
+  const speakThenListen = useCallback(
+    async (text: string) => {
+      speakingRef.current = true;
+      setSpeaking(true);
+      await speak(text);
+      speakingRef.current = false;
+      setSpeaking(false);
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      startListening();
+    },
+    [startListening]
+  );
+
   // Request mic/speech permission once, the first time a shift starts.
   useEffect(() => {
     if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
@@ -199,19 +220,13 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     if (shiftActive) {
       shouldListenRef.current = true;
       setStep('trigger');
-      speakingRef.current = true;
-      setSpeaking(true);
-      speak('Αν θέλετε να κάνετε καταχώρηση μίας νέας εγγραφής πείτε εγγραφή.').then(() => {
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
-      });
+      speakThenListen('Αν θέλετε να κάνετε καταχώρηση μίας νέας εγγραφής πείτε εγγραφή.');
     } else {
       shouldListenRef.current = false;
       setStep('idle');
       stopListening();
     }
-  }, [shiftActive, setStep, startListening, stopListening]);
+  }, [shiftActive, setStep, stopListening, speakThenListen]);
 
   useSpeechRecognitionEvent('start', () => {
     setListening(true);
@@ -231,13 +246,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     if (stepRef.current === 'amount' && lastSpokenAmountRef.current) {
       const amount = lastSpokenAmountRef.current;
       lastSpokenAmountRef.current = null;
-      speakingRef.current = true;
-      setSpeaking(true);
-      speak(`Το ποσό που καταχωρήσατε είναι ${amount} ευρώ. Για επιβεβαίωση πείτε Έντερ.`).then(() => {
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
-      });
+      speakThenListen(`Το ποσό που καταχωρήσατε είναι ${amount} ευρώ. Για επιβεβαίωση πείτε Έντερ.`);
       return;
     }
 
@@ -261,8 +270,6 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         if (!words.some((w) => w.startsWith('εγγραφ'))) return;
         stopListening();
         setStep('method');
-        speakingRef.current = true;
-        setSpeaking(true);
         // "POS" is spelled out as the Greek letter names, accented
         // ("πί όου Ες") so the TTS engine stresses the right syllables —
         // Greek TTS can't read the Latin "POS" at all, and the unaccented
@@ -272,12 +279,9 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // POS — "Εφαρμογή" is not itself a final payment method, it's a
         // category that opens a second screen (see the 'method' branch
         // below) asking how that app order was actually settled.
-        await speak(
+        await speakThenListen(
           'Για πληρωμή με εφαρμογή πείτε Εφαρμογή, για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες.'
         );
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
         return;
       }
 
@@ -307,14 +311,9 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           stopListening();
           router.push('/till-app-method');
           setStep('appMethod');
-          speakingRef.current = true;
-          setSpeaking(true);
-          await speak(
+          await speakThenListen(
             'Για πληρωμή μέσα στην εφαρμογή πείτε APP, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με μετρητά πείτε Μετρητά.'
           );
-          speakingRef.current = false;
-          setSpeaking(false);
-          startListening();
           return;
         }
 
@@ -322,12 +321,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         stopListening();
         router.push({ pathname: '/till-receipt', params: { method } });
         setStep('receipt');
-        speakingRef.current = true;
-        setSpeaking(true);
-        await speak('Με απόδειξη ή χωρίς απόδειξη;');
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
+        await speakThenListen('Με απόδειξη ή χωρίς απόδειξη;');
         return;
       }
 
@@ -352,12 +346,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         stopListening();
         router.push({ pathname: '/till-receipt', params: { method } });
         setStep('receipt');
-        speakingRef.current = true;
-        setSpeaking(true);
-        await speak('Με απόδειξη ή χωρίς απόδειξη;');
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
+        await speakThenListen('Με απόδειξη ή χωρίς απόδειξη;');
         return;
       }
 
@@ -373,12 +362,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           params: { method: pendingMethodRef.current, receipt: receipt ? '1' : '0' },
         });
         setStep('amount');
-        speakingRef.current = true;
-        setSpeaking(true);
-        await speak('Πείτε το ποσό συναλλαγής.');
-        speakingRef.current = false;
-        setSpeaking(false);
-        startListening();
+        await speakThenListen('Πείτε το ποσό συναλλαγής.');
         return;
       }
 
@@ -407,7 +391,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         }
       }
     },
-    [setStep, startListening, stopListening, clearAmountSettleTimer]
+    [setStep, speakThenListen, stopListening, clearAmountSettleTimer]
   );
 
   useSpeechRecognitionEvent('result', (event) => {
