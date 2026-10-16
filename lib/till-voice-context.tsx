@@ -266,10 +266,15 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // "POS" is spelled out as the Greek letter names, accented
         // ("πί όου Ες") so the TTS engine stresses the right syllables —
         // Greek TTS can't read the Latin "POS" at all, and the unaccented
-        // fused spelling ("πιοουες") came out with the wrong stress.
-        // This only affects what's spoken; the on-screen button still
-        // reads "POS".
-        await speak('Πείτε Εφαρμογή, Μετρητά, ή πί όου Ες, για να επιλέξετε την κατάλληλη συναλλαγή.');
+        // fused spelling ("πιοουες") came out with the wrong stress. This
+        // only affects what's spoken; the on-screen button still reads
+        // "POS". The "APP" button/method is now announced and answered
+        // with the English word "APP" (not "Εφαρμογή"), per the method
+        // button's new label — "εφαρμογή" is kept only in the descriptive
+        // part of the sentence, for natural Greek.
+        await speak(
+          'Για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με εφαρμογή πείτε APP.'
+        );
         speakingRef.current = false;
         setSpeaking(false);
         startListening();
@@ -278,7 +283,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
       if (currentStep === 'method') {
         let method: TillMethod | null = null;
-        if (words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
+        // The button/prompt now says "APP" (not "Εφαρμογή"), so the
+        // user's reply is expected to be "APP" too — but keep the Greek
+        // "εφαρμογ" stem as a fallback in case habit or the recognizer
+        // still produces it.
+        if (words.includes('app') || words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         else if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
         // The app itself now asks for this option by saying the accented
         // Greek letter names ("πί όου Ες"), since TTS can't pronounce the

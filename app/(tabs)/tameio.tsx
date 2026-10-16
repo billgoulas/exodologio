@@ -10,7 +10,7 @@ import { useTillVoice } from '@/lib/till-voice-context';
 import { TillMethod } from '@/lib/types';
 import { formatDate, toLocalDateString, formatTime } from '@/lib/utils-calc';
 
-const METHODS: TillMethod[] = ['app', 'cash', 'appointment'];
+const METHODS: TillMethod[] = ['cash', 'appointment', 'app'];
 
 export default function TameioScreen() {
   const router = useRouter();
