@@ -7,7 +7,7 @@ import { useAppContext } from './app-context';
 import { parseSpokenAmount, normalizeGreek } from './greek-number-parser';
 import { TillMethod } from './types';
 
-type VoiceStep = 'idle' | 'trigger' | 'method' | 'receipt' | 'amount';
+type VoiceStep = 'idle' | 'trigger' | 'method' | 'appMethod' | 'receipt' | 'amount';
 
 const VOICE_LANG = 'el-GR';
 // Native speech recognition is unsupported on web; the Ταμείο voice flow is
@@ -268,12 +268,12 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
         // Greek TTS can't read the Latin "POS" at all, and the unaccented
         // fused spelling ("πιοουες") came out with the wrong stress. This
         // only affects what's spoken; the on-screen button still reads
-        // "POS". The "APP" button/method is now announced and answered
-        // with the English word "APP" (not "Εφαρμογή"), per the method
-        // button's new label — "εφαρμογή" is kept only in the descriptive
-        // part of the sentence, for natural Greek.
+        // "POS". This first screen's three options are Εφαρμογή, Μετρητά,
+        // POS — "Εφαρμογή" is not itself a final payment method, it's a
+        // category that opens a second screen (see the 'method' branch
+        // below) asking how that app order was actually settled.
         await speak(
-          'Για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με εφαρμογή πείτε APP.'
+          'Για πληρωμή με εφαρμογή πείτε Εφαρμογή, για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες.'
         );
         speakingRef.current = false;
         setSpeaking(false);
@@ -283,11 +283,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
 
       if (currentStep === 'method') {
         let method: TillMethod | null = null;
-        // The button/prompt now says "APP" (not "Εφαρμογή"), so the
-        // user's reply is expected to be "APP" too — but keep the Greek
-        // "εφαρμογ" stem as a fallback in case habit or the recognizer
-        // still produces it.
-        if (words.includes('app') || words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
+        if (words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         else if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
         // The app itself now asks for this option by saying the accented
         // Greek letter names ("πί όου Ες"), since TTS can't pronounce the
@@ -302,6 +298,54 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           (words.includes('πι') && words.includes('ες'))
         )
           method = 'appointment';
+        if (!method) return;
+
+        // "Εφαρμογή" opens a second screen asking how the app order was
+        // actually settled — it never gets recorded as the final method
+        // itself. "Μετρητά"/"POS" chosen directly here ARE final.
+        if (method === 'app') {
+          stopListening();
+          router.push('/till-app-method');
+          setStep('appMethod');
+          speakingRef.current = true;
+          setSpeaking(true);
+          await speak(
+            'Για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με εφαρμογή πείτε APP.'
+          );
+          speakingRef.current = false;
+          setSpeaking(false);
+          startListening();
+          return;
+        }
+
+        pendingMethodRef.current = method;
+        stopListening();
+        router.push({ pathname: '/till-receipt', params: { method } });
+        setStep('receipt');
+        speakingRef.current = true;
+        setSpeaking(true);
+        await speak('Με απόδειξη ή χωρίς απόδειξη;');
+        speakingRef.current = false;
+        setSpeaking(false);
+        startListening();
+        return;
+      }
+
+      if (currentStep === 'appMethod') {
+        let method: TillMethod | null = null;
+        if (words.some((w) => w.startsWith('μετρητ'))) method = 'cash';
+        else if (
+          words.includes('pos') ||
+          words.includes('ποσ') ||
+          words.some((w) => w.startsWith('πιοουες') || w.startsWith('πιουες')) ||
+          (words.includes('πι') && words.includes('ες'))
+        )
+          method = 'appointment';
+        // This screen's third option is announced and answered as "APP"
+        // (not "Εφαρμογή"), to distinguish it from the first screen's
+        // "Εφαρμογή" category — but still accept the Greek stem too, in
+        // case habit or the recognizer produces it instead.
+        else if (words.includes('app') || words.some((w) => w.startsWith('εφαρμογ'))) method = 'app';
         if (!method) return;
 
         pendingMethodRef.current = method;

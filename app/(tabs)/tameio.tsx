@@ -10,7 +10,7 @@ import { useTillVoice } from '@/lib/till-voice-context';
 import { TillMethod } from '@/lib/types';
 import { formatDate, toLocalDateString, formatTime } from '@/lib/utils-calc';
 
-const METHODS: TillMethod[] = ['cash', 'appointment', 'app'];
+const METHODS: TillMethod[] = ['app', 'cash', 'appointment'];
 
 export default function TameioScreen() {
   const router = useRouter();
@@ -37,6 +37,13 @@ export default function TameioScreen() {
   };
 
   const openMethod = (method: TillMethod) => {
+    // "Εφαρμογή" isn't itself a final payment method — it opens a second
+    // screen asking how that app order was actually settled (Μετρητά/
+    // POS/APP), which is what determines the method actually recorded.
+    if (method === 'app') {
+      router.push('/till-app-method');
+      return;
+    }
     router.push({ pathname: '/till-receipt', params: { method } });
   };
 

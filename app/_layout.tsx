@@ -78,6 +78,7 @@ function RootLayoutContent({
                     <Stack.Screen name="edit-transaction" />
                     <Stack.Screen name="edit-installment" />
                     <Stack.Screen name="charts-view" />
+                    <Stack.Screen name="till-app-method" />
                     <Stack.Screen name="till-receipt" />
                     <Stack.Screen name="till-amount" />
                     <Stack.Screen name="till-history" />
