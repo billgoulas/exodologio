@@ -9,7 +9,7 @@ import { TillMethod } from '@/lib/types';
 // through a booking/delivery app, which still needs to say how that order
 // was actually settled. These three options determine the TillMethod that
 // actually gets recorded; "Εφαρμογή" itself never is.
-const SUB_METHODS: TillMethod[] = ['cash', 'appointment', 'app'];
+const SUB_METHODS: TillMethod[] = ['app', 'appointment', 'cash'];
 
 export default function TillAppMethodScreen() {
   const router = useRouter();

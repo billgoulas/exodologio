@@ -310,7 +310,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
           speakingRef.current = true;
           setSpeaking(true);
           await speak(
-            'Για πληρωμή με μετρητά πείτε Μετρητά, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με εφαρμογή πείτε APP.'
+            'Για πληρωμή μέσα στην εφαρμογή πείτε APP, για πληρωμή με πί όου Ες πείτε πί όου Ες, για πληρωμή με μετρητά πείτε Μετρητά.'
           );
           speakingRef.current = false;
           setSpeaking(false);
