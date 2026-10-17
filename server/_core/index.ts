@@ -30,18 +30,43 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Enable CORS for all routes - reflect the request origin to support credentials
+  // CORS: the shipped client is the native mobile app, which authenticates
+  // with an `Authorization: Bearer` header and isn't subject to browser CORS
+  // at all. The only thing CORS-with-credentials protects here is a browser
+  // client relying on the session cookie fallback (e.g. testing via
+  // `expo start --web`) — so only reflect same-machine localhost origins,
+  // plus any explicitly configured origins, instead of any origin on the
+  // internet. Reflecting an arbitrary Origin with
+  // Access-Control-Allow-Credentials: true would let any website that a
+  // logged-in user visits read their bank data by riding their session
+  // cookie (SameSite=none) cross-site.
+  const additionalAllowedOrigins = (process.env.ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  function isAllowedOrigin(origin: string): boolean {
+    if (additionalAllowedOrigins.includes(origin)) return true;
+    try {
+      const { hostname } = new URL(origin);
+      return hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+    } catch {
+      return false;
+    }
+  }
+
   app.use((req, res, next) => {
     const origin = req.headers.origin;
-    if (origin) {
+    if (origin && isAllowedOrigin(origin)) {
       res.header("Access-Control-Allow-Origin", origin);
+      res.header("Access-Control-Allow-Credentials", "true");
+      res.header("Vary", "Origin");
     }
     res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
     res.header(
       "Access-Control-Allow-Headers",
       "Origin, X-Requested-With, Content-Type, Accept, Authorization",
     );
-    res.header("Access-Control-Allow-Credentials", "true");
 
     // Handle preflight requests
     if (req.method === "OPTIONS") {

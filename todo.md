@@ -457,3 +457,577 @@
 - [x] Remove unnecessary storage permissions (READ/WRITE/MANAGE_EXTERNAL_STORAGE)
 - [x] Use FileSystem.cacheDirectory + Sharing.shareAsync() for both JSON and TXT
 - [x] Verify TypeScript compiles with zero errors
+
+## Fix: Expo Package Version Compatibility (BUG FIX)
+- [x] Run `npx expo install --check` to identify version mismatches
+- [x] Fix expo-sharing from ^55.0.18 to ^14.0.8 (SDK 54 compatible)
+- [x] Fix expo-document-picker from ^55.0.13 to ^14.0.8 (SDK 54 compatible)
+- [x] Fix @react-navigation/bottom-tabs to ^7.4.0
+- [x] Fix @react-navigation/native to ^7.1.8
+- [x] Update expo core packages to latest SDK 54 compatible versions
+- [x] Add expo-font plugin to app.config.ts
+- [x] Verify all dependencies pass `npx expo install --check`
+- [x] Verify TypeScript compiles with zero errors
+
+## Phase 58: Charts Modal Localization (FEATURE)
+- [x] Add chart tab labels to translations for all 9 languages
+- [x] Add chart titles to translations for all 9 languages
+- [x] Update charts-modal.tsx to use translation keys instead of hardcoded English strings
+- [x] Verify all tab labels display in selected language (Expense Categories, Income Categories, Daily, Weekly, Monthly)
+- [x] Verify all chart titles display in selected language (Expense/Income Distribution, Daily/Weekly/Monthly Trends)
+- [x] Test with all 9 languages to ensure correct translations
+
+## Phase 59: Pie Chart Localization and Full Category Display (FEATURE)
+- [x] Add chartAmount, chartPercentage, chartTransactions translation keys to all 9 languages
+- [x] Update pie-chart.tsx to use translations for Amount, Percentage, Transactions labels
+- [x] Update charts-utils.ts to include ALL expense/income categories (even with 0 amount) in pie chart
+- [x] Sort pie chart data: non-zero amounts first (descending), then zero-amount categories
+- [x] Verify pie chart now shows complete category distribution with all categories visible
+
+## Phase 60: Bar Chart Localization (FEATURE)
+- [x] Add income, expense, balance translation keys to all 9 languages
+- [x] Update bar-chart.tsx to use translations for all labels (Income, Expense, Balance, No data)
+- [x] Translate details table labels in bar chart
+- [x] Verify bar chart now displays all text in user's selected language
+
+## Phase 61: Add Currency Symbols to Chart Amounts (FEATURE)
+- [x] Add currency prop to pie-chart component
+- [x] Add currency prop to bar-chart component
+- [x] Display currency symbol after amounts (e.g., "150,50 €" instead of "€ 150,50")
+- [x] Update pie chart to show currency with all amount displays
+- [x] Update bar chart to show currency with all amount displays (income, expense, balance)
+
+## Phase 62: Bar Chart Translations and Scrollable Details (FEATURE)
+- [x] Fix Balance translation from Απόλοιπο to Υπόλοιπο in Greek
+- [x] Add Week and Month name translations to all 9 languages
+- [x] Update bar-chart to translate Week labels (e.g., "Week 1" → "Εβδομάδα 1")
+- [x] Update bar-chart to translate Month names (e.g., "Jan" → "Ιανούαριος")
+- [x] Make details list in bar-chart scrollable without visible scrollbar
+- [x] Apply scrolling to Daily, Weekly, and Monthly chart types
+
+## Phase 63: Charts UI Sizing Improvements (FEATURE)
+- [x] Reduce tab button height in charts-modal (paddingVertical 8 → 4, py-3 → py-1)
+- [x] Increase pie chart size from 200x200 to 300x300
+- [x] Increase pie chart radius from 80 to 120
+- [x] Make pie chart fill available vertical space with flex-1 and justify-center
+- [x] Reduce padding around pie chart title and container
+
+## Phase 64: Payment Method Selector (FEATURE)
+- [x] Add PaymentMethod type to types.ts
+- [x] Add paymentMethod field to Transaction interface
+- [x] Create PAYMENT_METHODS array in constants.ts with 5 payment methods
+- [x] Create PaymentMethodInfo interface in constants.ts
+- [x] Add payment method translations to all 9 languages (Greek, English, French, German, Italian, Spanish, Russian, Albanian, Bulgarian)
+- [x] Update transaction form to display payment method selector below category
+- [x] Add payment method icons (emoji) to payment methods
+- [ ] Display selected payment method in transaction details
+- [ ] Update edit-transaction form to include payment method selector
+
+## Phase 65: Fix Category and Payment Method Label Translations
+- [x] Update EXPENSE_CATEGORIES order and icons to match user requirements (14 categories with correct order)
+- [x] Update ExpenseCategory type to include 'fuel' and 'gift'
+- [x] Fix category labels to use dynamic translations in add-transaction form (using t(`categories.${cat.id}`))
+- [x] Fix payment method labels to use dynamic translations in add-transaction form (using t(`paymentMethods.${pm.id}`))
+- [ ] Add category translation keys to all 9 languages
+- [ ] Add payment method translation keys to all 9 languages
+- [ ] Test language switching to verify all labels translate correctly
+
+
+## Phase 66: Income Payment Method & Date Fixes
+- [ ] Add payment method selector to income transaction form
+- [ ] Ensure payment method labels translate correctly in income tab
+- [ ] Debug date update bug in expense and income tabs
+- [ ] Add date picker to add-transaction form for date modification
+- [ ] Add date picker to edit-transaction form for date modification
+- [ ] Test date picker functionality with different date formats
+
+## Phase 67: Reorganize Edit Transaction Button Layout (FEATURE)
+- [x] Swap button positions in edit-transaction form
+  - [x] Move Delete button to left side of top row (flex: 1)
+  - [x] Keep Save button on right side of top row (flex: 1)
+  - [x] Move Cancel button to full-width below (100%)
+  - [x] Delete button should have red background (#EF4444)
+  - [x] Cancel button should have gray background (#334155)
+  - [x] Save button should have blue background (#0A7EA4)
+- [x] Test button layout on both mobile and web
+- [x] Verify delete functionality still works
+- [x] Verify cancel closes form without changes
+- [x] Verify save updates transaction
+- [x] Verify all button translations work in all 9 languages
+
+## Phase 68: Display Payment Method in Transaction Lists (FEATURE)
+- [x] Update TransactionItem component to display payment method
+  - [x] Show payment method below notes/comments
+  - [x] Show payment method above username
+  - [x] Use translated payment method label (e.g., "Πιστωτική Κάρτα" for Greek)
+  - [x] Include payment method icon (emoji) with label
+  - [x] Format: "💳 Πιστωτική Κάρτα"
+- [x] Apply to Home screen transaction list
+- [x] Apply to Transactions screen transaction list
+- [x] Verify all 5 payment methods display correctly
+- [x] Test with all 9 languages (17 tests passing)
+- [x] Verify layout doesn't break on small screens
+
+## Phase 69: Implement Date Picker for Transaction Forms (FEATURE)
+- [x] Add Date Picker to add-transaction.tsx
+  - [x] Replace static date display with interactive date picker
+  - [x] Allow users to select any date when adding new transaction
+  - [x] Show selected date in the format from Settings
+  - [x] Default to today's date
+- [x] Add Date Picker to edit-transaction.tsx
+  - [x] Replace static date display with interactive date picker
+  - [x] Allow users to change transaction date when editing
+  - [x] Show selected date in the format from Settings
+  - [x] Load current transaction date as default
+- [x] Use react-native-date-picker library
+- [x] Ensure date picker respects user's date format preference
+- [x] Test on both mobile and web (15 tests passing)
+- [x] Verify date changes are saved correctly
+
+## Phase 70: Fix Cancel Button Visibility on Android (BUG FIX)
+- [x] Add safe area insets to edit-transaction.tsx
+  - [x] Import useSafeAreaInsets hook
+  - [x] Get bottom inset from safe area
+  - [x] Add bottom padding to ScrollView contentContainerStyle
+  - [x] Ensure Cancel button is visible above Android navigation bar
+- [x] Add safe area insets to add-transaction.tsx
+  - [x] Import useSafeAreaInsets hook
+  - [x] Get bottom inset from safe area
+  - [x] Add bottom padding to ScrollView contentContainerStyle
+  - [x] Ensure Cancel button is visible above Android navigation bar
+- [x] Test on Android device/emulator
+- [x] Verify buttons are scrollable and visible
+
+## Phase 71: Fix Date Picker Modal Positioning (BUG FIX)
+- [x] Fix Date Picker visibility on web preview
+  - [x] DatePicker not visible or too low on web
+  - [x] Center modal vertically
+  - [x] Ensure DatePicker is visible in the middle of screen
+- [x] Fix Date Picker modal positioning on Android
+  - [x] Modal buttons (Cancel/Save) covered by navigation bar
+  - [x] Move modal higher to avoid navigation bar
+  - [x] Add safe area padding to modal content
+  - [x] Ensure all buttons are visible and clickable
+- [x] Test on both web and Android
+
+## Phase 72: Fix Date Picker Format and Error Handling (BUG FIX)
+- [x] Fix date format in web date picker
+  - [x] Use user's selected date format from Settings (DD/MM/YYYY, MM/DD/YYYY, etc.)
+  - [x] Format the date display according to user preference
+  - [x] Parse date input respecting the format
+- [x] Fix error when deleting characters from date input
+  - [x] Add error handling for invalid date strings
+  - [x] Allow partial input without crashing
+  - [x] Only validate when user confirms (Save button)
+- [x] Test with all supported date formats
+- [x] Test on both web and mobile
+
+## Phase 73: Fix Timezone Bug in Date Picker (BUG FIX)
+- [x] Fix off-by-one date error on web preview
+  - [x] Issue: Selecting 10-04-2026 saves as 09-04-2026
+  - [x] Root cause: Timezone conversion when creating Date object
+  - [x] Solution: Use local date instead of UTC date
+  - [x] Replaced toISOString() with getFullYear/getMonth/getDate
+- [x] Test on web preview with various dates
+- [x] Verify mobile still works correctly
+- [x] Test date picker modal confirm button
+
+## Phase 74: Add New Expense Categories - Food and Delivery (FEATURE)
+- [x] Add "Τρόφιμο" (Food) category to EXPENSE_CATEGORIES
+  - [x] Position after "Αγαθό" (Goods)
+  - [x] Add realistic food icon (🍔)
+  - [x] Add translations in all 9 languages
+- [x] Add "Delivery" category to EXPENSE_CATEGORIES
+  - [x] Add realistic delivery icon (🚚)
+  - [x] Keep "Delivery" for Greek and English
+  - [x] Add translations for other 7 languages
+- [x] Update constants.ts with new categories
+- [x] Update translations.ts with new category names
+- [x] Test on add-transaction screen
+- [x] Test on edit-transaction screen
+- [x] Verify categories appear in correct order
+
+## Phase 75: Fix Theme Persistence Bug (BUG FIX)
+- [x] Fix theme being lost on app restart
+  - [x] Issue: Dark theme changes to light theme when app closes/reopens
+  - [x] Root cause: Race condition in ThemeProvider initialization
+  - [x] Solution: Added check to prevent unnecessary theme updates
+  - [x] Verify theme context is properly initialized
+- [x] Test theme persistence on mobile and web
+- [x] Verify dark/light toggle works correctly
+
+## Phase 76: Add Gift Card Payment Method (FEATURE)
+- [x] Add "Δωροκάρτα" (Gift Card) payment method
+  - [x] Position after "Χρεωστική Κάρτα" (Debit Card)
+  - [x] Add realistic gift card icon (🎁)
+  - [x] Add translations in all 9 languages
+- [x] Update constants.ts with new payment method
+- [x] Update types.ts with new PaymentMethod type
+- [x] Update translations.ts with new payment method names
+- [x] Test on add-transaction screen
+- [x] Test on edit-transaction screen
+- [x] Verify payment method appears in correct order
+
+## Phase 77: Fix Date Picker Text Visibility (BUG FIX)
+- [x] Fix date picker text color in modal
+  - [x] Date text not visible - same color as modal background
+  - [x] Make text visible in light theme
+  - [x] Make text visible in dark theme
+  - [x] Ensure good contrast ratio
+- [x] Test on both web and mobile
+- [x] Verify date is readable in both themes
+  - [x] Updated edit-transaction.tsx TextInput styling
+  - [x] Updated add-transaction.tsx TextInput styling
+  - [x] Background: #334155, Text: #FFFFFF, Border: #475569
+
+## Phase 78: Implement Double-Level Transaction Sorting (FEATURE)
+- [x] Sort transactions by creation date first (most recent first)
+  - [x] Primary sort: createdAt descending
+  - [x] Secondary sort: transaction date descending
+- [x] Update Home screen transaction list
+  - [x] Apply new sorting logic
+  - [x] Verify most recent transactions appear first
+- [x] Update Transactions screen transaction list
+  - [x] Apply new sorting logic
+  - [x] Verify most recent transactions appear first
+- [x] Test with multiple transactions (5 tests passing)
+- [x] Verify sorting works on both web and mobile
+
+## Phase 79: Fix Date Picker Text Color on Mobile (BUG FIX)
+- [x] Fix date picker text visibility on mobile
+  - [x] Issue: Date picker text is black on black background (not visible)
+  - [x] Only affects mobile (iOS/Android), not web
+  - [x] Added textColor="#FFFFFF" prop to DatePicker
+  - [x] Used `as any` to bypass TypeScript type checking
+- [x] Test on both iOS and Android
+- [x] Verify text is readable in both light and dark themes
+  - [x] Updated edit-transaction.tsx DatePicker
+  - [x] Updated add-transaction.tsx DatePicker
+
+## Phase 80: Fix Date Picker Modal Background for Light Theme (BUG FIX)
+- [x] Fix date picker text visibility in light theme
+  - [x] Issue: textColor prop only works in dark theme
+  - [x] In light theme, modal has black background with black text (not visible)
+  - [x] Solution: Use theme-aware textColor based on colorScheme
+  - [x] Ensure text is visible in both light and dark themes
+- [x] Use useColorScheme() to detect current theme
+- [x] Apply theme-aware textColor to DatePicker
+  - [x] Dark theme: textColor="#FFFFFF" (white)
+  - [x] Light theme: textColor="#000000" (black)
+- [x] Test on both light and dark themes
+- [x] Verify date picker is readable in all cases
+  - [x] Updated edit-transaction.tsx
+  - [x] Updated add-transaction.tsx
+
+## Phase 81: Reorganize Transaction Type Buttons into 2x2 Grid (UI IMPROVEMENT)
+- [x] Reorganize add-transaction button layout from 3 rows to 2x2 grid
+  - [x] Row 1: Expense (left), Income (right)
+  - [x] Row 2: Installments (left), Payment (right)
+- [x] Update button styling to maintain consistency
+- [x] Ensure equal sizing for all 4 buttons
+- [x] Test on multiple screen sizes
+- [x] Verify all buttons are clickable and responsive
+
+## Phase 82: Implement Installments Form Fields (FEATURE)
+- [ ] Create installment form UI with Amount, Count, Date Range, Payment Method fields
+- [ ] Implement installment form submission logic
+- [ ] Add installment list display in main navigation
+- [ ] Test installment creation and display
+- [ ] Add installment editing functionality
+- [ ] Add installment deletion functionality
+
+## Phase 82: Implement Installments Form Tab (FEATURE)
+- [x] Create conditional rendering in add-transaction.tsx to show installments form when type='installments'
+- [x] Add Amount input field for installments
+- [x] Add Count input field (number of installments)
+- [x] Add Date Range picker (start date and end date)
+- [x] Add Payment Method selector with only: Πάγια Εντολή (Standing Order), Τραπεζικός Λογαριασμός (Bank Account), Μετρητά (Cash)
+- [x] Remove category selector from installments form (no categories for installments)
+- [x] Implement installments form submission logic
+- [x] Add translations for new payment methods (Standing Order) in all 9 languages
+- [x] Test installments form with all 9 languages
+- [x] Test date range picker functionality
+- [x] Test payment method selection with only 3 methods
+
+## Phase 83: Hide Category and Payment Method Sections from Installments Form (UI CLEANUP)
+- [x] Hide all category buttons from installments form
+- [x] Hide all 8 payment method buttons from installments form
+- [x] Keep only the 3 installment-specific payment methods visible
+- [x] Verify installments form shows only: Amount, Count, Date Range, Description, and 3 Payment Methods
+- [x] Test that category and payment method sections are completely hidden
+- [x] Verify expense and income forms still show category and payment methods
+
+## Phase 84: Fix Installments Button Styling and Date Layout (UI REFINEMENT)
+- [x] Remove red border from Δόσεις button to match other transaction type buttons
+- [x] Change Δόσεις button to yellow color when active/selected
+- [x] Reorganize installment date fields layout:
+  - [x] Add "Από" and "Έως" labels on same line, centered above date boxes
+  - [x] Create 2 side-by-side date input boxes below the labels
+  - [x] Connect date boxes to modal date pickers
+  - [x] Ensure proper spacing and alignment
+- [x] Test button styling on all screen sizes
+- [x] Test date picker functionality with new layout
+- [x] Add translations for dateRange, from, and to in all 9 languages
+- [x] Verify translations display correctly in all languages
+
+## Phase 85: Create Installments Tab in Main Navigation (FEATURE)
+- [x] Research project structure and navigation setup
+- [x] Understand how tabs are configured in app/(tabs)/_layout.tsx
+- [x] Check how installment data is stored in app state
+- [x] Add Installments tab to main navigation with icon
+- [x] Create installments list screen at app/(tabs)/installments.tsx
+- [x] Implement scrollable list without visible scrollbar
+- [x] Sort installments by payment start date (earliest first)
+- [x] Display installment details (amount, count, date range, payment method)
+- [x] Add translations for "Installments" tab in all 9 languages
+- [x] Add icon mapping for installments in icon-symbol.tsx
+- [x] Test installments tab with multiple languages
+- [x] Test scrolling behavior with many installments
+- [x] Verify data persistence between tabs
+- [x] Test sorting functionality
+
+## Phase 86: Fix Critical Installments Bugs (BUG FIXES)
+- [x] Debug app crash when clicking Installments tab in main navigation
+- [x] Fix amount input field in installments form (not accepting input)
+- [x] Replace date pickers with numeric range inputs (from/to day of month)
+- [x] Add Bank field below installment count (text input for bank name)
+- [x] Update Installment type to include bank field
+- [x] Update installments.tsx to display bank information
+- [x] Ensure installments save correctly with numeric day ranges and bank name
+- [x] Test installments tab displays saved installments correctly
+- [x] Verify data persists between tabs
+- [x] Test on multiple screen sizes
+- [x] Add bank and bankPlaceholder translations to all 9 languages
+- [x] Remove old date picker modals from add-transaction.tsx
+- [x] Update handleAmountChange to work with installment amount field
+
+## Phase 87: Fix Installments Form UI Issues (UI REFINEMENT)
+- [x] Center numeric values in "Από" and "Έως" text input boxes
+- [x] Fix amount input field to use separate state from expense amount
+- [x] Ensure installment amount and expense amount are completely independent
+- [x] Test that typing in installment amount field doesn't affect expense amount
+- [x] Test that typing in expense amount field doesn't affect installment amount
+- [x] Verify all form fields work correctly in their respective tabs
+- [x] Create separate handleInstallmentAmountChange function
+- [x] Add text-center class to day input boxes
+
+## Phase 88: Fix "state.installments is not iterable" Error (CRITICAL BUG FIX)
+- [x] Debug the "state.installments is not iterable" error in app-context.tsx
+- [x] Add validation in loadStateFromStorage to ensure installments is always an array
+- [x] Add validation in loadStateFromStorage to ensure transactions is always an array
+- [x] Test that installments can be saved and loaded correctly
+- [x] Verify the error no longer appears when saving installments
+
+## Phase 89: Add Default Values and Edit Installment Functionality (FEATURE)
+- [x] Set default values for "Από" field to 1 and "Έως" field to 1 in installments form
+- [x] Implement double-click/double-tap handler on installment list items
+- [x] Create edit modal/screen for installments with all form fields
+- [x] Display current installment data in edit form
+- [x] Add Delete button at the bottom of edit form
+- [x] Implement delete functionality with confirmation
+- [x] Test double-click on desktop preview
+- [x] Test double-tap on mobile
+- [x] Verify edit form saves changes correctly
+- [x] Ensure delete removes installment from list
+- [x] Rewrite installments.tsx with edit modal functionality
+- [x] Add missing translation keys (from, to, delete, cancel, save, error)
+- [x] Fix corrupted translations file
+- [x] Verify all 9 languages have proper translations
+
+## Phase 90: Reorganize Installments Count Fields (UI REFINEMENT)
+- [x] Change "Αριθμός Δόσεων" label to "Υπόλοιπες Δόσεις"
+- [x] Add "Συνολικές Δόσεις" label on the same row
+- [x] Create two side-by-side text input boxes below the labels
+- [x] Set default value to 1 for both fields
+- [x] Center the numeric values in both boxes
+- [x] Add translations for "remainingInstallments" and "totalInstallments" in all 9 languages
+- [x] Update installments.tsx edit modal to display both fields
+- [x] Update add-transaction.tsx to handle both fields
+- [x] Test on multiple screen sizes
+- [x] Verify data is saved correctly
+- [x] Fix all corrupted translation sections in all 9 languages
+- [x] Verify TypeScript compilation with no errors
+
+## Phase 91: Fix Installments Form Input Fields to Start Empty (UI REFINEMENT)
+- [x] Remove initial value "1" from Remaining Installments input field
+- [x] Remove initial value "1" from Total Installments input field
+- [x] Remove initial value "1" from "Από" (From) day input field
+- [x] Change initial value from "7" to empty in "Έως" (To) day input field
+- [x] Keep placeholder "1" for all fields to show when cleared
+- [x] Ensure placeholder "1" displays in gray when fields are empty
+- [x] Test that fields start empty when opening the form
+- [x] Test that placeholder appears when clearing each field
+- [x] Verify all 4 fields behave consistently
+- [x] Test on multiple screen sizes
+
+## Phase 92: Enhance Installments Edit Modal with Full Form and Payment Methods (FEATURE)
+- [x] Redesign edit modal to display full installments form (like add transaction form)
+- [x] Add payment method buttons with icons to edit modal
+- [x] Update button layout: Delete (left) | Save (right) in first row
+- [x] Add Cancel button in second row with full width
+- [x] Ensure Cancel button height matches Delete/Save buttons
+- [x] Ensure Cancel button width equals Delete + Save width combined
+- [x] Test double-click/tap on installment list items opens enhanced modal
+- [x] Verify all form fields are editable in modal
+- [x] Test payment method selection in modal
+- [x] Test delete functionality from modal
+- [x] Test save functionality with all fields
+- [x] Verify cancel closes modal without saving
+- [x] Test on multiple screen sizes
+- [x] Ensure consistency with transaction edit modal behavior
+- [x] Fix duplicate imports and TypeScript errors
+- [x] Implement payment method buttons with icons from PAYMENT_METHODS constant
+
+## Phase 93: Add Dark Overlay to Installments Edit Modal (UI REFINEMENT)
+- [x] Add semi-transparent dark overlay behind the edit modal
+- [x] Ensure overlay covers the entire screen behind the modal
+- [x] Make the list behind the modal completely hidden
+- [x] Test on desktop preview
+- [x] Test on mobile preview
+- [x] Verify modal is fully visible and readable
+- [x] Test with different theme settings (light/dark mode)
+
+## Phase 94: Create Edit Installment Screen with Navigation (FEATURE)
+- [ ] Create app/edit-installment.tsx screen (similar to edit-transaction.tsx)
+- [ ] Use router.push() to navigate to edit screen when double-clicking installment
+- [ ] Pass installment ID as query parameter
+- [ ] Load installment data from state
+- [ ] Display full edit form with all fields
+- [ ] Show payment method buttons with icons
+- [ ] Implement delete functionality with confirmation
+- [ ] Implement save functionality
+- [ ] Add back button to return to installments list
+- [ ] Test double-click navigation on desktop
+- [ ] Test double-tap navigation on mobile
+- [ ] Verify data persists after editing
+- [ ] Test delete from edit screen
+- [ ] Ensure consistency with transaction edit flow
+
+## Phase 60: Update Installment Card Label to "Τελευταία Δόση" (CURRENT)
+- [x] Change label from "Ημερομηνία Πληρωμής Δόσης" to "Τελευταία Δόση"
+- [x] Calculate and display the last installment date (not the next payment date)
+- [x] Update rebuild-installments.ts to calculate last payment date
+- [x] Update installment-summary-card.tsx to display last payment date
+- [x] Verify multilingual support for all 9 languages
+- [x] Test calculations with various installment scenarios
+- [x] Ensure all tests pass (366 tests passing, no regressions)
+
+## Phase 61: Swap Installment Date Labels and Update Text (COMPLETED)
+- [x] Swap position of "Τελευταία Δόση" and "Επόμενη Πληρωμή" labels
+- [x] Change "Επόμενη Πληρωμή" to "Επόμενη Δόση" in all 9 languages
+- [x] Update Greek translations
+- [x] Update English translations
+- [x] Update French translations
+- [x] Update German translations
+- [x] Update Italian translations
+- [x] Update Spanish translations
+- [x] Update Russian translations
+- [x] Update Albanian translations
+- [x] Update Bulgarian translations
+- [x] Verify all tests pass (366 tests passing, no regressions)
+
+## Phase 62: Add Installments Summary Card to Home Screen (COMPLETED)
+- [x] Create new installments summary card component
+- [x] Display total installments amount based on selected filter
+- [x] Support all 9 languages with "Δόσεις" label
+- [x] Add unique color different from other cards (Violet #A78BFA)
+- [x] Position after "Υπόλοιπο Τραπεζικού Λογαριασμού" card
+- [x] Respect selected currency
+- [x] Update dynamically when filter changes
+- [x] Add translation key for "Installments" in all languages
+- [x] Test with various filters and currencies (366 tests passing)
+
+## Phase 65: Add Bank Name Field to Payment/Expense/Income Tabs (COMPLETED)
+- [x] Add "Τράπεζα" (Bank) label and text input field
+- [x] Position field below "Ημερομηνία" for expense, income, and transfer types
+- [x] Add placeholder text "Όνομα τράπεζας"
+- [x] Store bank name in transaction data
+- [x] Add translation key for "Bank" and "bankPlaceholder" in all 9 languages
+- [x] Update Transaction type to include optional bank field
+- [x] Test with various payment methods (366 tests passing)
+- [x] Verify multilingual support
+
+## Phase 66: Add Bank Name Field to Edit Transaction Screen (COMPLETED)
+- [x] Add bank field to edit-transaction.tsx component
+- [x] Load existing bank value when editing transaction
+- [x] Display bank field for expense, income, and transfer types
+- [x] Display bank field for installment type (with installmentBank)
+- [x] Position field below date picker (same as add-transaction)
+- [x] Support all 9 languages with existing translation keys
+- [x] Test editing transactions with and without bank name (366 tests passing)
+- [x] Verify bank name is saved when updating transaction
+- [x] Fix visibility condition to always show bank field for non-installment types
+
+## Phase 67: Fix Date Picker Text Color in Dark Mode (COMPLETED)
+- [x] Find all date picker components (add-transaction, edit-transaction, edit-installment)
+- [x] Change text color to use colors.foreground (respects theme automatically)
+- [x] Ensure readability in both light and dark themes
+- [x] Test with various date picker scenarios (366 tests passing)
+- [x] Verify all date pickers are fixed (transaction, installment, etc.)
+
+## Phase 68: Fix Bank Field in Duplicate Transaction Feature (COMPLETED)
+- [x] Find long-press handler for transaction duplication (transactions.tsx)
+- [x] Add bank field to duplicated transaction (expense, income, transfer types)
+- [x] Add installmentBank field to duplicated transaction (installment type)
+- [x] Test duplication with all transaction types (366 tests passing)
+- [x] Verify bank name appears in duplicated transaction form
+- [x] Ensure multilingual support works correctly
+
+## Phase 69: Fix Bank Field Persistence in All Transaction Operations (COMPLETED)
+- [x] Fix bank field not saving in new transactions (add-transaction) - added bank to handleSave
+- [x] Verify bank field saves correctly in transaction edits (edit-transaction) - already working
+- [x] Fix bank field not loading in duplicated transactions - added bank to useLocalSearchParams
+- [x] Test all transaction types: expense, income, transfer, installment (366 tests passing)
+- [x] Ensure bank field persists across all operations (create, edit, duplicate)
+- [x] Verify multilingual support works correctly
+
+## Phase 70: Audit Export/Import Data Completeness (COMPLETED)
+- [x] Check all fields exported in JSON format (expense, income, transfer, installment)
+- [x] Check all fields exported in TXT format (expense, income, transfer, installment)
+- [x] Verify bank field is included in export
+- [x] Verify all fields are imported correctly from JSON - FIXED: Now imports installments too
+- [x] Verify all fields are imported correctly from TXT
+- [x] Test with sample data containing all field variations (366 tests passing)
+- [x] Document any missing fields in export/import - FOUND: installments were not imported
+- [x] Fix any discrepancies found - FIXED: Updated importTransactions to handle installments
+
+## Phase 71: Add Transaction Summary Statistics Below Filters (COMPLETED)
+- [x] Add summary section below filter buttons in transactions.tsx
+- [x] Display transaction count for each filter type
+- [x] Display sum of amounts for each transaction type
+- [x] Respect selected currency and language
+- [x] Update dynamically when filter changes
+- [x] Add translation keys for all 9 languages:
+  - [x] Greek: "Σύνολο Συναλλαγών", "Σύνολο Εσόδων", "Σύνολο Εξόδων", "Σύνολο Δόσεων", "Σύνολο Πληρωμών"
+  - [x] English: "Total Transactions", "Total Income", "Total Expense", "Total Installments", "Total Payments"
+  - [x] French: "Total des Transactions", "Revenu Total", "Dépense Totale", "Versements Totaux", "Paiements Totaux"
+  - [x] German: "Gesamttransaktionen", "Gesamteinkommen", "Gesamtausgaben", "Gesamtraten", "Gesamtzahlungen"
+  - [x] Italian: "Totale Transazioni", "Totale Entrate", "Totale Spese", "Totale Rate", "Totale Pagamenti"
+  - [x] Spanish: "Total Transacciones", "Total Ingresos", "Total Gastos", "Total Cuotas", "Total Pagos"
+  - [x] Russian: "Всего Операций", "Всего Дохода", "Всего Расхода", "Всего Вставок", "Всего Платежей"
+  - [x] Albanian: "Gjithsej Transaksionet", "Gjithsej Të Ardhurat", "Gjithsej Shpenzime", "Gjithsej Instalime", "Gjithsej Pagesa"
+  - [x] Bulgarian: "Всичко Трансакции", "Всичко Доход", "Всичко Накрати", "Всичко Рати", "Всичко Плащания"
+- [x] Import formatCurrency function from lib/utils-calc.ts
+- [x] Display summary for "All" filter (all 5 totals)
+- [x] Display summary for "Income" filter (count + total income)
+- [x] Display summary for "Expense" filter (count + total expense)
+- [x] Display summary for "Installments" filter (count + total installments)
+- [x] Display summary for "Transfer" filter (count + total transfer)
+- [x] Test with various data scenarios
+- [x] Verify all tests pass (no regressions)
+
+
+## Phase 72: Open Banking Integration - Research & Setup (IN PROGRESS)
+- [ ] Research Open Banking APIs for Greek banks (Alpha, Eurobank, Piraeus, National)
+- [ ] Document API endpoints and authentication methods
+- [ ] Design database schema for bank connections
+- [ ] Plan OAuth flow and token storage strategy
+- [ ] Create backend endpoints for bank connection
+- [ ] Implement secure token storage (encrypted)
+- [ ] Create UI components for Settings - Bank Connection button
+- [ ] Implement OAuth flow in mobile app
+- [ ] Create transaction sync service
+- [ ] Implement app startup sync logic
+- [ ] Add error handling and retry logic
+- [ ] Write comprehensive tests for bank integration
+- [ ] Create documentation for bank connection feature
