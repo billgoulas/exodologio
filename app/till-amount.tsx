@@ -18,7 +18,7 @@ export default function TillAmountScreen() {
   const params = useLocalSearchParams<{ method?: TillMethod; receipt?: string; expenseCategory?: TillExpenseCategory }>();
   const { addTillEntry, addTillExpense, state } = useAppContext();
   const { t } = useI18n();
-  const { voiceAmountText, consumeVoiceAmount, voiceConfirmNonce } = useTillVoice();
+  const { voiceAmountText, consumeVoiceAmount, voiceConfirmNonce, listening, speaking, voiceEnabled } = useTillVoice();
   const insets = useSafeAreaInsets();
   const [amount, setAmount] = useState('');
 
@@ -112,6 +112,12 @@ export default function TillAmountScreen() {
             <Text className="text-2xl text-foreground">✕</Text>
           </Pressable>
         </View>
+
+        {voiceEnabled && (
+          <Text className="text-xs text-muted mb-2">
+            {speaking ? `🔊 ${t('till.voiceSpeaking')}` : listening ? `🎙️ ${t('till.voiceListening')}` : ''}
+          </Text>
+        )}
 
         {/* Read-only amount display: a View/Text, not a TextInput, so tapping
             it can never trigger Android's on-screen keyboard — only the

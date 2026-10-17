@@ -96,6 +96,7 @@ export interface TillState {
   entries: TillEntry[];
   expenses: TillExpenseEntry[];
   history: TillShiftRecord[]; // every completed shift, newest first
+  voiceEnabled: boolean; // whether the Ταμείο voice flow listens/speaks at all
 }
 
 export interface AppState {

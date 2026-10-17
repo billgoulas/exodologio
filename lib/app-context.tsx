@@ -20,6 +20,7 @@ const defaultTillState: TillState = {
   entries: [],
   expenses: [],
   history: [],
+  voiceEnabled: true,
 };
 
 const defaultState: AppState = {
@@ -50,6 +51,7 @@ type AppAction =
   | { type: 'DELETE_TILL_ENTRY'; payload: string }
   | { type: 'ADD_TILL_EXPENSE'; payload: TillExpenseEntry }
   | { type: 'DELETE_TILL_EXPENSE'; payload: string }
+  | { type: 'SET_TILL_VOICE_ENABLED'; payload: boolean }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
 
@@ -182,6 +184,11 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         till: { ...state.till, expenses: [action.payload, ...state.till.expenses] },
       };
+    case 'SET_TILL_VOICE_ENABLED':
+      return {
+        ...state,
+        till: { ...state.till, voiceEnabled: action.payload },
+      };
     case 'DELETE_TILL_EXPENSE':
       return {
         ...state,
@@ -255,6 +262,7 @@ interface AppContextType {
   deleteTillEntry: (id: string) => void;
   addTillExpense: (expense: TillExpenseEntry) => void;
   deleteTillExpense: (id: string) => void;
+  setTillVoiceEnabled: (enabled: boolean) => void;
   importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
@@ -316,6 +324,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
               ...record,
               expenses: Array.isArray(record.expenses) ? record.expenses : [],
             }));
+          }
+          if (typeof parsedState.till.voiceEnabled !== 'boolean') {
+            parsedState.till.voiceEnabled = true;
           }
         }
         // Merge over defaultSettings so a missing/corrupted settings object,
@@ -419,6 +430,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'DELETE_TILL_EXPENSE', payload: id });
   }, []);
 
+  const setTillVoiceEnabled = useCallback((enabled: boolean) => {
+    dispatch({ type: 'SET_TILL_VOICE_ENABLED', payload: enabled });
+  }, []);
+
   const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
@@ -494,6 +509,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     deleteTillEntry,
     addTillExpense,
     deleteTillExpense,
+    setTillVoiceEnabled,
     importTransactions,
     exportData,
     clearAllData,

@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
+import { View, Text, Pressable, ScrollView, Alert, Switch } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCallback } from 'react';
 import { ScreenContainer } from '@/components/screen-container';
@@ -11,14 +11,15 @@ import { TillMethod } from '@/lib/types';
 import { formatDate, toLocalDateString, formatTime } from '@/lib/utils-calc';
 
 const METHODS: TillMethod[] = ['app', 'cash', 'appointment'];
+const VOICE_TRACK_COLOR = { true: '#0a7ea4' };
 
 export default function TameioScreen() {
   const router = useRouter();
-  const { state, startShift, endShift, deleteTillEntry } = useAppContext();
+  const { state, startShift, endShift, deleteTillEntry, setTillVoiceEnabled } = useAppContext();
   const { t, language } = useI18n();
   const { listening, speaking, resetToTrigger } = useTillVoice();
 
-  const { shiftActive, shiftStartedAt, shiftEndedAt, entries, expenses } = state.till;
+  const { shiftActive, shiftStartedAt, shiftEndedAt, entries, expenses, voiceEnabled } = state.till;
 
   // Re-arm the "εγγραφή" trigger whenever this screen regains focus —
   // covers finishing a transaction by voice, by touch, or cancelling
@@ -63,7 +64,13 @@ export default function TameioScreen() {
       <View className="flex-1">
         {/* Header */}
         <View className="px-4 py-4 border-b border-border">
-          <Text className="text-2xl font-bold text-foreground">{t('nav.till')}</Text>
+          <View className="flex-row items-center justify-between">
+            <Text className="text-2xl font-bold text-foreground">{t('nav.till')}</Text>
+            <View className="flex-row items-center" style={{ gap: 6 }}>
+              <Text className="text-base">🎙️</Text>
+              <Switch value={voiceEnabled} onValueChange={setTillVoiceEnabled} trackColor={VOICE_TRACK_COLOR} />
+            </View>
+          </View>
           {shiftStartedAt && (
             <Text className="text-sm text-muted mt-1">
               {t('till.startShift')}: {formatShiftTimestamp(shiftStartedAt)}
@@ -74,7 +81,7 @@ export default function TameioScreen() {
               {t('till.endShift')}: {formatShiftTimestamp(shiftEndedAt)}
             </Text>
           )}
-          {shiftActive && (
+          {shiftActive && voiceEnabled && (
             <Text className="text-xs text-muted mt-1">
               {speaking ? `🔊 ${t('till.voiceSpeaking')}` : listening ? `🎙️ ${t('till.voiceListening')}` : ''}
             </Text>

@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useI18n } from '@/lib/i18n-context';
+import { useTillVoice } from '@/lib/till-voice-context';
 import { TillMethod } from '@/lib/types';
 
 // "Εφαρμογή" isn't itself a final payment method — it's an order placed
@@ -15,6 +16,7 @@ export default function TillAppMethodScreen() {
   const router = useRouter();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const { listening, speaking, voiceEnabled } = useTillVoice();
 
   const choose = (method: TillMethod) => {
     router.push({ pathname: '/till-receipt', params: { method } });
@@ -30,6 +32,11 @@ export default function TillAppMethodScreen() {
             <Text className="text-2xl text-foreground">✕</Text>
           </Pressable>
         </View>
+        {voiceEnabled && (
+          <Text className="text-xs text-muted mb-2">
+            {speaking ? `🔊 ${t('till.voiceSpeaking')}` : listening ? `🎙️ ${t('till.voiceListening')}` : ''}
+          </Text>
+        )}
         <Text className="text-base text-muted mb-6">{t('till.chooseType')}</Text>
 
         <View style={{ gap: 12 }}>

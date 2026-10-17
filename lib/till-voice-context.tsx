@@ -37,6 +37,10 @@ interface TillVoiceContextType {
    * Ταμείο screen regains focus, so the flow resets correctly regardless of
    * whether the previous transaction was finished by voice or by touch. */
   resetToTrigger: () => void;
+  /** Whether the voice flow is turned on at all (the Ταμείο screen's
+   * toggle). Every screen's listening/speaking indicator should only show
+   * while this is true. */
+  voiceEnabled: boolean;
 }
 
 const TillVoiceContext = createContext<TillVoiceContextType | undefined>(undefined);
@@ -56,6 +60,7 @@ function speak(text: string): Promise<void> {
 export function TillVoiceProvider({ children }: { children: ReactNode }) {
   const { state } = useAppContext();
   const shiftActive = state.till.shiftActive;
+  const voiceEnabled = state.till.voiceEnabled;
 
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
@@ -219,24 +224,26 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     [startListening]
   );
 
-  // Request mic/speech permission once, the first time a shift starts.
+  // Request mic/speech permission once, the first time a shift starts
+  // with voice enabled.
   useEffect(() => {
-    if (!SUPPORTED || !shiftActive || permissionRequestedRef.current) return;
+    if (!SUPPORTED || !shiftActive || !voiceEnabled || permissionRequestedRef.current) return;
     permissionRequestedRef.current = true;
     ExpoSpeechRecognitionModule.requestPermissionsAsync().catch(() => {
       // If permission is denied, voice commands simply won't trigger;
       // touch-based entry still works.
     });
-  }, [shiftActive]);
+  }, [shiftActive, voiceEnabled]);
 
-  // The whole voice flow lives and dies with the shift. On start, announce
-  // the trigger word once before listening begins — this effect only
-  // re-runs when shiftActive actually flips, so it naturally fires once
-  // per shift start, not on every render.
+  // The whole voice flow lives and dies with the shift AND the voice
+  // on/off toggle. On start, announce the trigger word once before
+  // listening begins — this effect only re-runs when shiftActive or
+  // voiceEnabled actually flip, so it naturally fires once per shift
+  // start (or toggle-on), not on every render.
   useEffect(() => {
     if (!SUPPORTED) return;
     stepHistoryRef.current = [];
-    if (shiftActive) {
+    if (shiftActive && voiceEnabled) {
       shouldListenRef.current = true;
       setStep('trigger');
       speakThenListen('Αν θέλετε να κάνετε καταχώρηση μίας νέας εγγραφής πείτε εγγραφή.');
@@ -244,8 +251,11 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
       shouldListenRef.current = false;
       setStep('idle');
       stopListening();
+      // Toggling voice off mid-sentence should cut it off immediately,
+      // not let whatever's already queued finish speaking.
+      Speech.stop();
     }
-  }, [shiftActive, setStep, stopListening, speakThenListen]);
+  }, [shiftActive, voiceEnabled, setStep, stopListening, speakThenListen]);
 
   useSpeechRecognitionEvent('start', () => {
     setListening(true);
@@ -481,6 +491,7 @@ export function TillVoiceProvider({ children }: { children: ReactNode }) {
     consumeVoiceAmount,
     voiceConfirmNonce,
     resetToTrigger,
+    voiceEnabled,
   };
 
   return <TillVoiceContext.Provider value={value}>{children}</TillVoiceContext.Provider>;

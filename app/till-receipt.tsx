@@ -3,6 +3,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenContainer } from '@/components/screen-container';
 import { useI18n } from '@/lib/i18n-context';
+import { useTillVoice } from '@/lib/till-voice-context';
 import { TillMethod } from '@/lib/types';
 
 export default function TillReceiptScreen() {
@@ -10,6 +11,7 @@ export default function TillReceiptScreen() {
   const params = useLocalSearchParams<{ method: TillMethod }>();
   const { t } = useI18n();
   const insets = useSafeAreaInsets();
+  const { listening, speaking, voiceEnabled } = useTillVoice();
 
   const method = params.method;
 
@@ -27,6 +29,11 @@ export default function TillReceiptScreen() {
             <Text className="text-2xl text-foreground">✕</Text>
           </Pressable>
         </View>
+        {voiceEnabled && (
+          <Text className="text-xs text-muted mb-2">
+            {speaking ? `🔊 ${t('till.voiceSpeaking')}` : listening ? `🎙️ ${t('till.voiceListening')}` : ''}
+          </Text>
+        )}
         <Text className="text-base text-muted mb-6">{t('till.chooseType')}</Text>
 
         <View style={{ gap: 12 }}>
