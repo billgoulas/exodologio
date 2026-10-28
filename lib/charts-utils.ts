@@ -160,6 +160,13 @@ export function getDailyChartData(
   const dailyData: Record<string, DailyChartData> = {};
 
   monthTransactions.forEach((t) => {
+    // Transfers (e.g. moving money between a bank account and a credit
+    // card) are neither income nor expense — the Σύνοψη screen already
+    // excludes them from its totals (tracked separately as "Πληρωμές"),
+    // so this has to match or this chart's expense total disagrees with
+    // that screen's for the same period.
+    if (t.type === 'transfer') return;
+
     if (!dailyData[t.date]) {
       dailyData[t.date] = {
         date: t.date,
@@ -200,6 +207,9 @@ export function getWeeklyChartData(
   const weeklyData: Record<number, WeeklyChartData> = {};
 
   monthTransactions.forEach((t) => {
+    // Transfers aren't income or expense — see getDailyChartData above.
+    if (t.type === 'transfer') return;
+
     const date = parseLocalDateString(t.date);
     const weekNumber = Math.ceil((date.getDate()) / 7);
     const weekKey = weekNumber;
@@ -260,6 +270,13 @@ export function getMonthlyChartData(
   }
 
   yearTransactions.forEach((t) => {
+    // Transfers aren't income or expense — see getDailyChartData above.
+    // Without this, a transfer's amount was silently added to "expense"
+    // here, so this chart's monthly expense total didn't match the
+    // Σύνοψη screen's for the same month (which excludes transfers,
+    // tracking them separately as "Πληρωμές").
+    if (t.type === 'transfer') return;
+
     const date = parseLocalDateString(t.date);
     const monthIndex = date.getMonth();
 
