@@ -118,9 +118,14 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
               );
             })}
 
-            {/* Y-axis labels (amounts) */}
+            {/* Y-axis labels (amounts). As i increases, y moves UP the
+                chart (see the y formula below: higher i means smaller y),
+                so the label's value has to increase with i too, or the
+                labels end up paired with the wrong gridline — "0" at the
+                top and the highest amount at the bottom, backwards from
+                where the bars actually reach. */}
             {Array.from({ length: gridLines + 1 }).map((_, i) => {
-              const value = (maxValue / gridLines) * (gridLines - i);
+              const value = (maxValue / gridLines) * i;
               const y = chartHeight - (i * chartHeight) / gridLines + 20;
               return (
                 <SvgText key={`label-${i}`} x={axisX - 8} y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
