@@ -58,6 +58,7 @@ export default function EditTransactionScreen() {
   const [date, setDate] = useState(initDate);
   const [notes, setNotes] = useState('');
   const [bank, setBank] = useState('');
+  const [reward, setReward] = useState('');
   
   // Installment state
   const [installmentAmount, setInstallmentAmount] = useState('');
@@ -101,6 +102,7 @@ export default function EditTransactionScreen() {
         setDate(transaction.date);
         setNotes(transaction.notes || '');
         setBank(transaction.bank || '');
+        setReward(transaction.reward || '');
         setPickerDate(parseLocalDateString(transaction.date));
         setOriginalCreatedAt(transaction.createdAt);
         
@@ -232,6 +234,7 @@ export default function EditTransactionScreen() {
           date,
           notes,
           bank: bank || undefined,
+          reward: type === 'income' ? (reward || undefined) : undefined,
           username: state.transactions.find(t => t.id === id)?.username || 'Unknown',
           createdAt: originalCreatedAt,
           transactionSubType: type as 'income' | 'expense',
@@ -667,6 +670,22 @@ export default function EditTransactionScreen() {
               value={notes}
               onChangeText={setNotes}
               placeholder={t('transaction.addNotes')}
+              className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
+              placeholderTextColor="#687076"
+            />
+          </View>
+        )}
+
+        {/* Reward Input - Show only for income type */}
+        {type === 'income' && (
+          <View className="mb-4">
+            <Text className="text-base font-semibold text-foreground mb-2">
+              {t('transaction.reward')} <Text className="text-muted text-sm">({t('common.optional')})</Text>
+            </Text>
+            <TextInput
+              value={reward}
+              onChangeText={setReward}
+              placeholder={t('transaction.rewardPlaceholder')}
               className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
               placeholderTextColor="#687076"
             />

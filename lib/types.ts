@@ -5,7 +5,7 @@
 export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export type IncomeCategory = 'salary' | 'freelance' | 'investment' | 'bonus' | 'gift' | 'rent_income' | 'reward' | 'subscriptions' | 'other_income';
-export type ExpenseCategory = 'groceries' | 'department_store' | 'utilities' | 'fuel' | 'restaurant' | 'bakery' | 'greengrocer' | 'butcher' | 'bakery_pastry' | 'pharmacy' | 'snacks' | 'clothing' | 'shoes' | 'entertainment' | 'accessories' | 'books' | 'tutoring' | 'delivery' | 'tolls' | 'rent' | 'loan' | 'repair' | 'health' | 'borrowed' | 'investment_expense' | 'gift_expense' | 'transport' | 'services' | 'installment' | 'subscriptions_expense' | 'other_expense';
+export type ExpenseCategory = 'groceries' | 'department_store' | 'utilities' | 'fuel' | 'restaurant' | 'bakery' | 'greengrocer' | 'butcher' | 'bakery_pastry' | 'pharmacy' | 'snacks' | 'clothing' | 'shoes' | 'entertainment' | 'accessories' | 'books' | 'tutoring' | 'cosmetics' | 'delivery' | 'tolls' | 'rent' | 'loan' | 'repair' | 'health' | 'borrowed' | 'investment_expense' | 'gift_expense' | 'transport' | 'services' | 'installment' | 'subscriptions_expense' | 'other_expense';
 export type Category = IncomeCategory | ExpenseCategory;
 
 export type PaymentMethod = 'credit_card' | 'debit_card' | 'toll_card' | 'iris' | 'gift_card' | 'cash' | 'bank_transfer' | 'rewards' | 'investment_account';
@@ -30,6 +30,7 @@ export interface Transaction {
   installmentBank?: string; // Bank name for installment transactions
   installmentPaymentMethod?: InstallmentPaymentMethod; // Original payment method for installment transactions (standing_order, cash, bank_transfer)
   bank?: string; // Bank name for regular transactions (expense, income, transfer)
+  reward?: string; // Reward note (income transactions only)
 }
 
 export type Language = 'el' | 'en' | 'fr' | 'de' | 'it' | 'es' | 'ru' | 'sq' | 'bg';

@@ -77,6 +77,7 @@ export default function AddTransactionScreen() {
   const [notes, setNotes] = useState(initNotes as any);
   const initBank = (params as any)?.bank || '';
   const [bank, setBank] = useState(initBank);
+  const [reward, setReward] = useState('');
   
   // Installment state - initialize from params if duplicating
   const [installmentAmount, setInstallmentAmount] = useState(initAmount);
@@ -207,6 +208,7 @@ export default function AddTransactionScreen() {
         createdAt: new Date().toISOString(),
         transactionSubType: type as 'income' | 'expense',
         bank: bank || undefined,
+        reward: type === 'income' ? (reward || undefined) : undefined,
       };
       addTransaction(transaction);
     }
@@ -580,6 +582,22 @@ export default function AddTransactionScreen() {
               value={notes}
               onChangeText={setNotes}
               placeholder={t('transaction.addNotes')}
+              className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
+              placeholderTextColor="#687076"
+            />
+          </View>
+        )}
+
+        {/* Reward Input - Show only for income type */}
+        {type === 'income' && (
+          <View className="mb-4">
+            <Text className="text-base font-semibold text-foreground mb-2">
+              {t('transaction.reward')} <Text className="text-muted text-sm">({t('common.optional')})</Text>
+            </Text>
+            <TextInput
+              value={reward}
+              onChangeText={setReward}
+              placeholder={t('transaction.rewardPlaceholder')}
               className="border border-border rounded-lg px-4 py-3 text-foreground bg-surface"
               placeholderTextColor="#687076"
             />
