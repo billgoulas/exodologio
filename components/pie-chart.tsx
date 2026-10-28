@@ -1,9 +1,14 @@
 import { View, Text, ScrollView } from 'react-native';
 import Svg, { Circle, G, Path, Ellipse, Defs, LinearGradient, Stop, Text as SvgText, TSpan } from 'react-native-svg';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { PieChartData } from '@/lib/charts-utils';
 import { formatNumber, formatPercentage } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
 import { translations } from '@/lib/translations';
+
+const MIN_ZOOM = 1;
+const MAX_ZOOM = 4;
 
 interface PieChartProps {
   data: PieChartData[];
@@ -25,6 +30,23 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
     }
     return typeof value === 'string' ? value : defaultValue;
   };
+
+  // Pinch-to-zoom on the pie itself. Deliberately pinch-only (no pan):
+  // the chart sits inside a vertical ScrollView, and a one-finger pan
+  // gesture on the chart would fight that scroll; a two-finger pinch
+  // doesn't, since scrolling only ever uses one finger.
+  const zoom = useSharedValue(1);
+  const savedZoom = useSharedValue(1);
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      zoom.value = Math.min(Math.max(savedZoom.value * e.scale, MIN_ZOOM), MAX_ZOOM);
+    })
+    .onEnd(() => {
+      savedZoom.value = zoom.value;
+    });
+  const zoomStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: zoom.value }],
+  }));
 
   const size = 400;
   const radius = 100;
@@ -92,11 +114,13 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
       <View className="flex-1 items-center py-4">
         <Text className="text-lg font-bold text-foreground mb-4">{title}</Text>
 
-        {/* Pie Chart SVG with 3D Effect */}
+        {/* Pie Chart SVG with 3D Effect — pinch to zoom in/out */}
         {data.length > 0 ? (
-          <View className="flex-1 items-center justify-center mb-6">
-            <Svg width={size} height={size + 60} viewBox={`0 0 ${size} ${size + 60}`}>
-              <Defs>
+          <View className="flex-1 items-center justify-center mb-6" style={{ overflow: 'visible' }}>
+            <GestureDetector gesture={pinchGesture}>
+              <Animated.View style={zoomStyle}>
+                <Svg width={size} height={size + 60} viewBox={`0 0 ${size} ${size + 60}`}>
+                  <Defs>
                 <LinearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.3" />
                   <Stop offset="100%" stopColor="#000000" stopOpacity="0.2" />
@@ -151,6 +175,8 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
                 </SvgText>
               ))}
             </Svg>
+            </Animated.View>
+          </GestureDetector>
           </View>
         ) : (
           <View className="items-center justify-center py-8">
