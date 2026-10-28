@@ -28,9 +28,14 @@ interface BarChartProps {
   language: Language;
   type: 'daily' | 'weekly' | 'monthly';
   currency?: string;
+  /** Shows each bar's transaction count, centered inside it. Used for the
+   * Installments chart, where seeing "how many" matters as much as the
+   * amount; left off elsewhere so Monthly Comparison/Expense Trend keep
+   * their existing look. */
+  showCounts?: boolean;
 }
 
-export function BarChart({ data, title, language, type, currency = '€' }: BarChartProps) {
+export function BarChart({ data, title, language, type, currency = '€', showCounts = false }: BarChartProps) {
   const t = (key: string, defaultValue: string = key) => {
     const keys = key.split('.');
     let value: any = translations[language] || {};
@@ -58,7 +63,15 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
   const chartHeight = 250;
   const barWidth = 35;
   const spacing = 15;
-  const chartWidth = data.length * (barWidth + spacing) + 60;
+  // Y-axis labels are amounts formatted with 2 decimals (e.g. "1.234,56"),
+  // which don't fit in the 35px this used to leave them (axis at x=40,
+  // label right-edge at x=5) — most of a multi-digit label rendered at a
+  // negative x and got clipped off the left of the SVG's viewBox, leaving
+  // only a trailing fragment visible. Widening the margin gives them real
+  // room.
+  const axisX = 70;
+  const barsStartX = axisX + 10;
+  const chartWidth = data.length * (barWidth + spacing) + axisX + 30;
   const gridLines = 5;
 
   // Get month abbreviation for display
@@ -86,7 +99,7 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
               return (
                 <Line
                   key={`grid-${i}`}
-                  x1="40"
+                  x1={axisX}
                   y1={y}
                   x2={Math.max(chartWidth, 320) - 10}
                   y2={y}
@@ -96,29 +109,31 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
               );
             })}
 
-            {/* Y-axis labels */}
+            {/* Y-axis labels (amounts) */}
             {Array.from({ length: gridLines + 1 }).map((_, i) => {
               const value = (maxValue / gridLines) * (gridLines - i);
               const y = chartHeight - (i * chartHeight) / gridLines + 20;
               return (
-                <SvgText key={`label-${i}`} x="5" y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
+                <SvgText key={`label-${i}`} x={axisX - 8} y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
                   <TSpan>{formatNumber(value, language)}</TSpan>
                 </SvgText>
               );
             })}
 
             {/* Y-axis */}
-            <Line x1="40" y1="20" x2="40" y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
+            <Line x1={axisX} y1="20" x2={axisX} y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
 
             {/* X-axis */}
-            <Line x1="40" y1={chartHeight + 20} x2={Math.max(chartWidth, 320) - 10} y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
+            <Line x1={axisX} y1={chartHeight + 20} x2={Math.max(chartWidth, 320) - 10} y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
 
             {/* Stacked Bars */}
             {data.map((item, index) => {
-              const x = 50 + index * (barWidth + spacing);
-              const totalValue = item.income + item.expense;
+              const x = barsStartX + index * (barWidth + spacing);
               const incomeHeight = maxValue > 0 ? (item.income / maxValue) * chartHeight : 0;
               const expenseHeight = maxValue > 0 ? (item.expense / maxValue) * chartHeight : 0;
+              const barTopY = chartHeight - incomeHeight - expenseHeight + 20;
+              const barBottomY = chartHeight + 20;
+              const count = item.incomeCount + item.expenseCount;
 
               return (
                 <G key={index}>
@@ -133,18 +148,31 @@ export function BarChart({ data, title, language, type, currency = '€' }: BarC
                   {/* Expense bar (top, red) */}
                   <Rect
                     x={x}
-                    y={chartHeight - incomeHeight - expenseHeight + 20}
+                    y={barTopY}
                     width={barWidth}
                     height={expenseHeight}
                     fill="#EF4444"
                   />
+                  {/* Transaction count, centered in the bar */}
+                  {showCounts && count > 0 && (
+                    <SvgText
+                      x={x + barWidth / 2}
+                      y={(barTopY + barBottomY) / 2 + 4}
+                      fontSize="12"
+                      fontWeight="bold"
+                      fill="#FFFFFF"
+                      textAnchor="middle"
+                    >
+                      <TSpan>{count}</TSpan>
+                    </SvgText>
+                  )}
                 </G>
               );
             })}
 
             {/* X-axis labels (month names) */}
             {data.map((item, index) => {
-              const x = 50 + index * (barWidth + spacing) + barWidth / 2;
+              const x = barsStartX + index * (barWidth + spacing) + barWidth / 2;
               let label = '';
               if (type === 'daily') {
                 label = (item as DailyChartData).date.split('-')[2]; // Day only

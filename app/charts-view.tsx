@@ -116,12 +116,13 @@ export default function ChartsViewScreen() {
               />
             )}
             {selectedChart === 'installments-bar' && (
-              <BarChart 
-                data={chartData.installmentsByMonth} 
-                title={t('analytics.installmentsByMonth')} 
-                language={language} 
-                type="monthly" 
+              <BarChart
+                data={chartData.installmentsByMonth}
+                title={t('analytics.installmentsByMonth')}
+                language={language}
+                type="monthly"
                 currency={state.settings.currency}
+                showCounts
               />
             )}
             {selectedChart === 'expense-trend' && (
