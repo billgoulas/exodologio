@@ -6,9 +6,19 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { PieChart } from '@/components/pie-chart';
 import { BarChart } from '@/components/bar-chart';
-import { getMonthSummary, parseLocalDateString } from '@/lib/utils-calc';
-import { getExpensePieChartData, getIncomePieChartData, getMonthlyChartData } from '@/lib/charts-utils';
+import { getMonthSummary, parseLocalDateString, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName } from '@/lib/utils-calc';
+import {
+  getExpensePieChartData,
+  getIncomePieChartData,
+  getExpensePieChartDataForRange,
+  getIncomePieChartDataForRange,
+  getMonthlyChartData,
+} from '@/lib/charts-utils';
+import { CustomDateRangePicker } from '@/components/custom-date-range-picker';
+import { Language } from '@/lib/types';
 import * as ScreenOrientation from 'expo-screen-orientation';
+
+type PiePeriodMode = 'month' | 'year' | 'range';
 
 type ChartType = 'expense-pie' | 'income-pie' | 'monthly-bar' | 'installments-bar' | 'expense-trend' | null;
 
@@ -51,6 +61,123 @@ function YearSelector({
   );
 }
 
+// Compact month stepper, same shape as YearSelector but for "‹ Οκτώβριος
+// 2026 ›".
+function MonthSelector({
+  month,
+  year,
+  language,
+  onChange,
+}: {
+  month: number;
+  year: number;
+  language: Language;
+  onChange: (monthYear: { month: number; year: number }) => void;
+}) {
+  return (
+    <View className="flex-row items-center" style={{ gap: 4 }}>
+      <Pressable
+        onPress={() => onChange(getPreviousMonth(month, year))}
+        hitSlop={8}
+        style={({ pressed }) => [{ padding: 4, opacity: pressed ? 0.6 : 1 }]}
+      >
+        <Text className="text-primary font-bold text-base">‹</Text>
+      </Pressable>
+      <Text className="text-foreground font-semibold text-sm" style={{ minWidth: 88, textAlign: 'center' }}>
+        {getMonthName(month, language)} {year}
+      </Text>
+      <Pressable
+        onPress={() => onChange(getNextMonth(month, year))}
+        hitSlop={8}
+        style={({ pressed }) => [{ padding: 4, opacity: pressed ? 0.6 : 1 }]}
+      >
+        <Text className="text-primary font-bold text-base">›</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// Period picker for the two category-breakdown pie charts only — a row of
+// three mode pills (Μήνας/Έτος/Περίοδος) plus whichever control that mode
+// needs. Only rendered under the pie charts' header, so the bar charts
+// keep their simpler single YearSelector.
+function PiePeriodControls({
+  mode,
+  onModeChange,
+  month,
+  year,
+  onMonthYearChange,
+  pieYear,
+  minYear,
+  maxYear,
+  onYearChange,
+  rangeFrom,
+  rangeTo,
+  onRangeChange,
+  language,
+  t,
+}: {
+  mode: PiePeriodMode;
+  onModeChange: (mode: PiePeriodMode) => void;
+  month: number;
+  year: number;
+  onMonthYearChange: (monthYear: { month: number; year: number }) => void;
+  pieYear: number;
+  minYear: number;
+  maxYear: number;
+  onYearChange: (year: number) => void;
+  rangeFrom: Date | null;
+  rangeTo: Date | null;
+  onRangeChange: (from: Date | null, to: Date | null) => void;
+  language: Language;
+  t: (key: string, defaultValue?: string) => string;
+}) {
+  const modes: { value: PiePeriodMode; label: string }[] = [
+    { value: 'month', label: t('analytics.periodMonth', 'Μήνας') },
+    { value: 'year', label: t('analytics.periodYear', 'Έτος') },
+    { value: 'range', label: t('analytics.periodRange', 'Περίοδος') },
+  ];
+  return (
+    <View className="border-b border-border">
+      <View className="flex-row items-center justify-between px-4 py-2">
+        <View className="flex-row" style={{ gap: 6 }}>
+          {modes.map((m) => (
+            <Pressable
+              key={m.value}
+              onPress={() => onModeChange(m.value)}
+              style={({ pressed }) => [{
+                paddingHorizontal: 10,
+                paddingVertical: 4,
+                borderRadius: 999,
+                backgroundColor: mode === m.value ? '#0a7ea4' : 'transparent',
+                borderWidth: mode === m.value ? 0 : 1,
+                borderColor: '#687076',
+                opacity: pressed ? 0.7 : 1,
+              }]}
+            >
+              <Text
+                className={mode === m.value ? 'text-white' : 'text-foreground'}
+                style={{ fontSize: 12, fontWeight: '600' }}
+              >
+                {m.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {mode === 'month' && (
+          <MonthSelector month={month} year={year} language={language} onChange={onMonthYearChange} />
+        )}
+        {mode === 'year' && (
+          <YearSelector year={pieYear} minYear={minYear} maxYear={maxYear} onChange={onYearChange} />
+        )}
+      </View>
+      {mode === 'range' && (
+        <CustomDateRangePicker fromDate={rangeFrom} toDate={rangeTo} onDateRangeChange={onRangeChange} />
+      )}
+    </View>
+  );
+}
+
 export default function ChartsViewScreen() {
   const router = useRouter();
   const { state } = useAppContext();
@@ -58,6 +185,16 @@ export default function ChartsViewScreen() {
   const [selectedChart, setSelectedChart] = useState<ChartType>(null);
   const thisYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(thisYear);
+
+  // The two pie charts get their own independent period selection (month,
+  // year, or a custom range), separate from the bar charts' single-year
+  // selector above — a calendar month or an arbitrary range doesn't mean
+  // anything for a chart that's inherently a breakdown across 12 months.
+  const [pieMode, setPieMode] = useState<PiePeriodMode>('month');
+  const [pieMonthYear, setPieMonthYear] = useState(getCurrentMonthYear());
+  const [pieYear, setPieYear] = useState(thisYear);
+  const [pieRangeFrom, setPieRangeFrom] = useState<Date | null>(null);
+  const [pieRangeTo, setPieRangeTo] = useState<Date | null>(null);
 
   // Lets the year selector reach any year that actually has data, plus the
   // current year even if it has none yet — never a dead end in either
@@ -95,19 +232,44 @@ export default function ChartsViewScreen() {
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
-  // Calculate chart data for the selected year. The pie charts used to be
-  // scoped to the current calendar month, which made no sense once a year
-  // became pickable (a past year has no "current month" in it) — they now
-  // cover the whole selected year instead, same scope as the bar charts.
+  // Bar chart data for the selected year.
   const chartData = useMemo(() => {
     return {
-      expensePieData: getExpensePieChartData(state.transactions, null, selectedYear),
-      incomePieData: getIncomePieChartData(state.transactions, null, selectedYear),
       monthlyData: getMonthlyChartData(state.transactions, selectedYear),
       installmentsByMonth: getMonthlyChartData(state.transactions.filter(t => t.category === 'installment'), selectedYear),
       expenseTrendData: getMonthlyChartData(state.transactions.filter(t => t.type === 'expense'), selectedYear),
     };
   }, [state.transactions, selectedYear]);
+
+  // Pie chart data for whichever period mode is active. In "range" mode,
+  // an incomplete selection (only one of the two dates picked) shows
+  // nothing rather than guessing — PieChart's own empty state prompts for
+  // the missing date.
+  const pieChartData = useMemo(() => {
+    if (pieMode === 'month') {
+      return {
+        expensePieData: getExpensePieChartData(state.transactions, pieMonthYear.month, pieMonthYear.year),
+        incomePieData: getIncomePieChartData(state.transactions, pieMonthYear.month, pieMonthYear.year),
+      };
+    }
+    if (pieMode === 'year') {
+      return {
+        expensePieData: getExpensePieChartData(state.transactions, null, pieYear),
+        incomePieData: getIncomePieChartData(state.transactions, null, pieYear),
+      };
+    }
+    if (pieRangeFrom && pieRangeTo) {
+      const from = new Date(pieRangeFrom);
+      from.setHours(0, 0, 0, 0);
+      const to = new Date(pieRangeTo);
+      to.setHours(23, 59, 59, 999);
+      return {
+        expensePieData: getExpensePieChartDataForRange(state.transactions, from, to),
+        incomePieData: getIncomePieChartDataForRange(state.transactions, from, to),
+      };
+    }
+    return { expensePieData: [], incomePieData: [] };
+  }, [state.transactions, pieMode, pieMonthYear, pieYear, pieRangeFrom, pieRangeTo]);
 
   if (selectedChart !== null) {
     // Full screen chart view
@@ -135,24 +297,50 @@ export default function ChartsViewScreen() {
               {selectedChart === 'installments-bar' && t('analytics.installmentsByMonth')}
               {selectedChart === 'expense-trend' && t('analytics.expenseTrend')}
             </Text>
-            <YearSelector year={selectedYear} minYear={minYear} maxYear={maxYear} onChange={setSelectedYear} />
+            {selectedChart === 'expense-pie' || selectedChart === 'income-pie' ? (
+              <View style={{ width: 60 }} />
+            ) : (
+              <YearSelector year={selectedYear} minYear={minYear} maxYear={maxYear} onChange={setSelectedYear} />
+            )}
           </View>
+
+          {(selectedChart === 'expense-pie' || selectedChart === 'income-pie') && (
+            <PiePeriodControls
+              mode={pieMode}
+              onModeChange={setPieMode}
+              month={pieMonthYear.month}
+              year={pieMonthYear.year}
+              onMonthYearChange={setPieMonthYear}
+              pieYear={pieYear}
+              minYear={minYear}
+              maxYear={maxYear}
+              onYearChange={setPieYear}
+              rangeFrom={pieRangeFrom}
+              rangeTo={pieRangeTo}
+              onRangeChange={(from, to) => {
+                setPieRangeFrom(from);
+                setPieRangeTo(to);
+              }}
+              language={language}
+              t={t}
+            />
+          )}
 
           {/* Chart Display */}
           <ScrollView className="flex-1" contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 16 }}>
             {selectedChart === 'expense-pie' && (
-              <PieChart 
-                data={chartData.expensePieData} 
-                title={t('analytics.expenseByCategory')} 
-                language={language} 
+              <PieChart
+                data={pieChartData.expensePieData}
+                title={t('analytics.expenseByCategory')}
+                language={language}
                 currency={state.settings.currency}
               />
             )}
             {selectedChart === 'income-pie' && (
-              <PieChart 
-                data={chartData.incomePieData} 
-                title={t('analytics.incomeByCategory')} 
-                language={language} 
+              <PieChart
+                data={pieChartData.incomePieData}
+                title={t('analytics.incomeByCategory')}
+                language={language}
                 currency={state.settings.currency}
               />
             )}

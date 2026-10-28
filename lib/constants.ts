@@ -41,7 +41,7 @@ export const EXPENSE_CATEGORIES: CategoryInfo[] = [
   { id: 'gift_expense', label: 'Δώρο', icon: '🎀', type: 'expense' },
   { id: 'transport', label: 'Μεταφορά', icon: '🚗', type: 'expense' },
   { id: 'services', label: 'Υπηρεσία', icon: '🧰', type: 'expense' },
-  { id: 'subscriptions_expense', label: 'Συνδρομές', icon: '📺', type: 'expense' },
+  { id: 'subscriptions_expense', label: 'Συνδρομή', icon: '📺', type: 'expense' },
   { id: 'other_expense', label: 'Άλλο', icon: '🔔', type: 'expense' },
 ];
 

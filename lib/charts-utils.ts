@@ -46,25 +46,20 @@ const CHART_COLORS = [
   '#8B5CF6', '#D946EF', '#EC4899', '#F43F5E', '#64748B',
 ];
 
-/**
- * Get pie chart data for expenses by category
- * Includes all expense categories, even those with 0 amount
- */
-export function getExpensePieChartData(
+// Shared by every getXPieChartData variant below (month/year, whole year,
+// or an arbitrary date range) — they only differ in which transactions
+// `matchesDate` lets through.
+function buildPieChartData(
   transactions: Transaction[],
-  month: number | null,
-  year: number
+  type: 'income' | 'expense',
+  matchesDate: (date: Date) => boolean
 ): PieChartData[] {
-  const monthTransactions = transactions.filter((t) => {
-    const date = parseLocalDateString(t.date);
-    const monthMatches = month === null || date.getMonth() === month - 1;
-    return monthMatches && date.getFullYear() === year && t.type === 'expense';
-  });
+  const matching = transactions.filter((t) => t.type === type && matchesDate(parseLocalDateString(t.date)));
 
   const grouped: Record<string, { total: number; count: number }> = {};
-  const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const total = matching.reduce((sum, t) => sum + t.amount, 0);
 
-  monthTransactions.filter((t) => t.category !== undefined).forEach((t) => {
+  matching.filter((t) => t.category !== undefined).forEach((t) => {
     const cat = t.category!;
     if (!grouped[cat]) {
       grouped[cat] = { total: 0, count: 0 };
@@ -73,8 +68,9 @@ export function getExpensePieChartData(
     grouped[cat].count += 1;
   });
 
-  // Create entries for all expense categories (including those with 0 amount)
-  const allCategoryData = EXPENSE_CATEGORIES.map((cat, index) => {
+  // Create entries for all categories of this type (including those with 0 amount)
+  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const allCategoryData = categories.map((cat, index) => {
     const data = grouped[cat.id] || { total: 0, count: 0 };
     return {
       category: cat.id,
@@ -97,53 +93,57 @@ export function getExpensePieChartData(
 }
 
 /**
- * Get pie chart data for income by category
- * Includes all income categories, even those with 0 amount
+ * Get pie chart data for expenses by category, for one month or (month:
+ * null) a whole year. Includes all expense categories, even those with 0
+ * amount.
+ */
+export function getExpensePieChartData(
+  transactions: Transaction[],
+  month: number | null,
+  year: number
+): PieChartData[] {
+  return buildPieChartData(
+    transactions,
+    'expense',
+    (date) => (month === null || date.getMonth() === month - 1) && date.getFullYear() === year
+  );
+}
+
+/**
+ * Get pie chart data for income by category, for one month or (month:
+ * null) a whole year. Includes all income categories, even those with 0
+ * amount.
  */
 export function getIncomePieChartData(
   transactions: Transaction[],
   month: number | null,
   year: number
 ): PieChartData[] {
-  const monthTransactions = transactions.filter((t) => {
-    const date = parseLocalDateString(t.date);
-    const monthMatches = month === null || date.getMonth() === month - 1;
-    return monthMatches && date.getFullYear() === year && t.type === 'income';
-  });
+  return buildPieChartData(
+    transactions,
+    'income',
+    (date) => (month === null || date.getMonth() === month - 1) && date.getFullYear() === year
+  );
+}
 
-  const grouped: Record<string, { total: number; count: number }> = {};
-  const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+/** Same as getExpensePieChartData, but for an arbitrary [fromDate, toDate]
+ * range instead of a calendar month/year. */
+export function getExpensePieChartDataForRange(
+  transactions: Transaction[],
+  fromDate: Date,
+  toDate: Date
+): PieChartData[] {
+  return buildPieChartData(transactions, 'expense', (date) => date >= fromDate && date <= toDate);
+}
 
-  monthTransactions.filter((t) => t.category !== undefined).forEach((t) => {
-    const cat = t.category!;
-    if (!grouped[cat]) {
-      grouped[cat] = { total: 0, count: 0 };
-    }
-    grouped[cat].total += t.amount;
-    grouped[cat].count += 1;
-  });
-
-  // Create entries for all income categories (including those with 0 amount)
-  const allCategoryData = INCOME_CATEGORIES.map((cat, index) => {
-    const data = grouped[cat.id] || { total: 0, count: 0 };
-    return {
-      category: cat.id,
-      label: cat.label,
-      icon: cat.icon,
-      amount: data.total,
-      percentage: total > 0 ? (data.total / total) * 100 : 0,
-      count: data.count,
-      color: CHART_COLORS[index % CHART_COLORS.length],
-    };
-  });
-
-  // Sort by amount (descending), but keep zero-amount categories at the end
-  return allCategoryData.sort((a, b) => {
-    if (a.amount === 0 && b.amount === 0) return 0;
-    if (a.amount === 0) return 1;
-    if (b.amount === 0) return -1;
-    return b.amount - a.amount;
-  });
+/** Same as getIncomePieChartData, but for an arbitrary [fromDate, toDate]
+ * range instead of a calendar month/year. */
+export function getIncomePieChartDataForRange(
+  transactions: Transaction[],
+  fromDate: Date,
+  toDate: Date
+): PieChartData[] {
+  return buildPieChartData(transactions, 'income', (date) => date >= fromDate && date <= toDate);
 }
 
 /**

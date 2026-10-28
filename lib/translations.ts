@@ -3210,5 +3210,12 @@ const SYNC_STATUS_STRINGS: Record<Language, { syncStatus_active: string; syncSta
   categories.subscriptions_expense = categories.subscriptions;
 });
 
+// "Συνδρομές" (plural) reads naturally for the income category — it's
+// typically more than one recurring source of income — but for a single
+// expense entry "Συνδρομή" (singular) is the more natural Greek wording.
+// Only the Greek label changes; every other language keeps the shared
+// alias set above.
+(translations.el.categories as Record<string, string>).subscriptions_expense = 'Συνδρομή';
+
 // Note: Adding root-level PIN translation keys for all remaining languages
 // These are used by PinVerificationModal component which uses flat i18n keys
