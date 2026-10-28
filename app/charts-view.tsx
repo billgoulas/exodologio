@@ -6,7 +6,7 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { PieChart } from '@/components/pie-chart';
 import { BarChart } from '@/components/bar-chart';
-import { getMonthSummary, parseLocalDateString, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName } from '@/lib/utils-calc';
+import { getMonthSummary, parseLocalDateString, getCurrentMonthYear, getNextMonth, getPreviousMonth, getMonthName, formatDate, toLocalDateString } from '@/lib/utils-calc';
 import {
   getExpensePieChartData,
   getIncomePieChartData,
@@ -14,8 +14,8 @@ import {
   getIncomePieChartDataForRange,
   getMonthlyChartData,
 } from '@/lib/charts-utils';
-import { CustomDateRangePicker } from '@/components/custom-date-range-picker';
-import { Language } from '@/lib/types';
+import { CustomDatePickerModal } from '@/components/custom-date-picker-modal';
+import { Language, DateFormat } from '@/lib/types';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 type PiePeriodMode = 'month' | 'year' | 'range';
@@ -97,10 +97,88 @@ function MonthSelector({
   );
 }
 
+// Compact inline "Από – Έως" pair, same row as the other mode controls —
+// just the two short date labels, tap either to change it. Deliberately
+// not the full CustomDateRangePicker (which has its own label row, a
+// Κλείσιμο button and two full-width boxes): that doesn't fit on the same
+// row as the mode pills.
+function RangeSelector({
+  fromDate,
+  toDate,
+  dateFormat,
+  onChange,
+}: {
+  fromDate: Date | null;
+  toDate: Date | null;
+  dateFormat: DateFormat;
+  onChange: (fromDate: Date | null, toDate: Date | null) => void;
+}) {
+  const [showFromPicker, setShowFromPicker] = useState(false);
+  const [showToPicker, setShowToPicker] = useState(false);
+  const tempFrom = fromDate || new Date();
+  const tempTo = toDate || new Date();
+
+  const fromLabel = fromDate ? formatDate(toLocalDateString(fromDate), dateFormat) : '—';
+  const toLabel = toDate ? formatDate(toLocalDateString(toDate), dateFormat) : '—';
+
+  return (
+    <View className="flex-row items-center" style={{ gap: 4 }}>
+      <Pressable
+        onPress={() => setShowFromPicker(true)}
+        style={({ pressed }) => [{
+          paddingHorizontal: 6,
+          paddingVertical: 3,
+          borderRadius: 6,
+          borderWidth: 1,
+          borderColor: '#687076',
+          opacity: pressed ? 0.6 : 1,
+        }]}
+      >
+        <Text className="text-foreground" style={{ fontSize: 11 }}>{fromLabel}</Text>
+      </Pressable>
+      <Text className="text-muted" style={{ fontSize: 11 }}>–</Text>
+      <Pressable
+        onPress={() => setShowToPicker(true)}
+        style={({ pressed }) => [{
+          paddingHorizontal: 6,
+          paddingVertical: 3,
+          borderRadius: 6,
+          borderWidth: 1,
+          borderColor: '#687076',
+          opacity: pressed ? 0.6 : 1,
+        }]}
+      >
+        <Text className="text-foreground" style={{ fontSize: 11 }}>{toLabel}</Text>
+      </Pressable>
+
+      <CustomDatePickerModal
+        visible={showFromPicker}
+        initialDate={tempFrom}
+        onDateSelect={(date) => {
+          onChange(date, toDate);
+          setShowFromPicker(false);
+        }}
+        onCancel={() => setShowFromPicker(false)}
+        maxDate={tempTo}
+      />
+      <CustomDatePickerModal
+        visible={showToPicker}
+        initialDate={tempTo}
+        onDateSelect={(date) => {
+          onChange(fromDate, date);
+          setShowToPicker(false);
+        }}
+        onCancel={() => setShowToPicker(false)}
+        minDate={tempFrom}
+      />
+    </View>
+  );
+}
+
 // Period picker for the two category-breakdown pie charts only — a row of
 // three mode pills (Μήνας/Έτος/Περίοδος) plus whichever control that mode
-// needs. Only rendered under the pie charts' header, so the bar charts
-// keep their simpler single YearSelector.
+// needs, all on the same row. Only rendered under the pie charts' header,
+// so the bar charts keep their simpler single YearSelector.
 function PiePeriodControls({
   mode,
   onModeChange,
@@ -114,6 +192,7 @@ function PiePeriodControls({
   rangeFrom,
   rangeTo,
   onRangeChange,
+  dateFormat,
   language,
   t,
 }: {
@@ -129,6 +208,7 @@ function PiePeriodControls({
   rangeFrom: Date | null;
   rangeTo: Date | null;
   onRangeChange: (from: Date | null, to: Date | null) => void;
+  dateFormat: DateFormat;
   language: Language;
   t: (key: string, defaultValue?: string) => string;
 }) {
@@ -139,7 +219,7 @@ function PiePeriodControls({
   ];
   return (
     <View className="border-b border-border">
-      <View className="flex-row items-center justify-between px-4 py-2">
+      <View className="flex-row items-center justify-between px-4 py-2" style={{ flexWrap: 'wrap', rowGap: 6 }}>
         <View className="flex-row" style={{ gap: 6 }}>
           {modes.map((m) => (
             <Pressable
@@ -170,10 +250,10 @@ function PiePeriodControls({
         {mode === 'year' && (
           <YearSelector year={pieYear} minYear={minYear} maxYear={maxYear} onChange={onYearChange} />
         )}
+        {mode === 'range' && (
+          <RangeSelector fromDate={rangeFrom} toDate={rangeTo} dateFormat={dateFormat} onChange={onRangeChange} />
+        )}
       </View>
-      {mode === 'range' && (
-        <CustomDateRangePicker fromDate={rangeFrom} toDate={rangeTo} onDateRangeChange={onRangeChange} />
-      )}
     </View>
   );
 }
@@ -321,6 +401,7 @@ export default function ChartsViewScreen() {
                 setPieRangeFrom(from);
                 setPieRangeTo(to);
               }}
+              dateFormat={state.settings.dateFormat}
               language={language}
               t={t}
             />
