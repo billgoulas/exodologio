@@ -6,17 +6,67 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { PieChart } from '@/components/pie-chart';
 import { BarChart } from '@/components/bar-chart';
-import { getMonthSummary, getCurrentMonthYear } from '@/lib/utils-calc';
+import { getMonthSummary, parseLocalDateString } from '@/lib/utils-calc';
 import { getExpensePieChartData, getIncomePieChartData, getMonthlyChartData } from '@/lib/charts-utils';
 import * as ScreenOrientation from 'expo-screen-orientation';
 
 type ChartType = 'expense-pie' | 'income-pie' | 'monthly-bar' | 'installments-bar' | 'expense-trend' | null;
+
+// Compact year stepper for the chart header — deliberately just two arrows
+// and the number, not a dropdown/calendar picker, to leave as much vertical
+// space as possible for the charts themselves.
+function YearSelector({
+  year,
+  minYear,
+  maxYear,
+  onChange,
+}: {
+  year: number;
+  minYear: number;
+  maxYear: number;
+  onChange: (year: number) => void;
+}) {
+  return (
+    <View className="flex-row items-center" style={{ gap: 2 }}>
+      <Pressable
+        onPress={() => onChange(Math.max(minYear, year - 1))}
+        disabled={year <= minYear}
+        hitSlop={8}
+        style={({ pressed }) => [{ padding: 4, opacity: year <= minYear ? 0.3 : pressed ? 0.6 : 1 }]}
+      >
+        <Text className="text-primary font-bold text-base">‹</Text>
+      </Pressable>
+      <Text className="text-foreground font-semibold text-sm" style={{ minWidth: 36, textAlign: 'center' }}>
+        {year}
+      </Text>
+      <Pressable
+        onPress={() => onChange(Math.min(maxYear, year + 1))}
+        disabled={year >= maxYear}
+        hitSlop={8}
+        style={({ pressed }) => [{ padding: 4, opacity: year >= maxYear ? 0.3 : pressed ? 0.6 : 1 }]}
+      >
+        <Text className="text-primary font-bold text-base">›</Text>
+      </Pressable>
+    </View>
+  );
+}
 
 export default function ChartsViewScreen() {
   const router = useRouter();
   const { state } = useAppContext();
   const { t, language } = useI18n();
   const [selectedChart, setSelectedChart] = useState<ChartType>(null);
+  const thisYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = useState(thisYear);
+
+  // Lets the year selector reach any year that actually has data, plus the
+  // current year even if it has none yet — never a dead end in either
+  // direction.
+  const { minYear, maxYear } = useMemo(() => {
+    const years = state.transactions.map((tx) => parseLocalDateString(tx.date).getFullYear());
+    years.push(thisYear);
+    return { minYear: Math.min(...years), maxYear: Math.max(...years) };
+  }, [state.transactions, thisYear]);
 
   // Lock screen orientation based on chart selection
   useEffect(() => {
@@ -45,19 +95,19 @@ export default function ChartsViewScreen() {
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
 
-  // Calculate chart data
+  // Calculate chart data for the selected year. The pie charts used to be
+  // scoped to the current calendar month, which made no sense once a year
+  // became pickable (a past year has no "current month" in it) — they now
+  // cover the whole selected year instead, same scope as the bar charts.
   const chartData = useMemo(() => {
-    const currentMonth = getCurrentMonthYear();
-    const currentYear = new Date().getFullYear();
-    
     return {
-      expensePieData: getExpensePieChartData(state.transactions, currentMonth.month, currentMonth.year),
-      incomePieData: getIncomePieChartData(state.transactions, currentMonth.month, currentMonth.year),
-      monthlyData: getMonthlyChartData(state.transactions, currentYear),
-      installmentsByMonth: getMonthlyChartData(state.transactions.filter(t => t.category === 'installment'), currentYear),
-      expenseTrendData: getMonthlyChartData(state.transactions.filter(t => t.type === 'expense'), currentYear),
+      expensePieData: getExpensePieChartData(state.transactions, null, selectedYear),
+      incomePieData: getIncomePieChartData(state.transactions, null, selectedYear),
+      monthlyData: getMonthlyChartData(state.transactions, selectedYear),
+      installmentsByMonth: getMonthlyChartData(state.transactions.filter(t => t.category === 'installment'), selectedYear),
+      expenseTrendData: getMonthlyChartData(state.transactions.filter(t => t.type === 'expense'), selectedYear),
     };
-  }, [state.transactions]);
+  }, [state.transactions, selectedYear]);
 
   if (selectedChart !== null) {
     // Full screen chart view
@@ -85,7 +135,7 @@ export default function ChartsViewScreen() {
               {selectedChart === 'installments-bar' && t('analytics.installmentsByMonth')}
               {selectedChart === 'expense-trend' && t('analytics.expenseTrend')}
             </Text>
-            <View style={{ width: 60 }} />
+            <YearSelector year={selectedYear} minYear={minYear} maxYear={maxYear} onChange={setSelectedYear} />
           </View>
 
           {/* Chart Display */}
@@ -159,7 +209,7 @@ export default function ChartsViewScreen() {
         <Text className="text-lg font-bold text-foreground">
           {t('analytics.charts', 'Διαγράμματα')}
         </Text>
-        <View style={{ width: 60 }} />
+        <YearSelector year={selectedYear} minYear={minYear} maxYear={maxYear} onChange={setSelectedYear} />
       </View>
 
       <ScrollView className="flex-1" contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 16 }}>

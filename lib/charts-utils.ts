@@ -52,12 +52,13 @@ const CHART_COLORS = [
  */
 export function getExpensePieChartData(
   transactions: Transaction[],
-  month: number,
+  month: number | null,
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
     const date = parseLocalDateString(t.date);
-    return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'expense';
+    const monthMatches = month === null || date.getMonth() === month - 1;
+    return monthMatches && date.getFullYear() === year && t.type === 'expense';
   });
 
   const grouped: Record<string, { total: number; count: number }> = {};
@@ -101,12 +102,13 @@ export function getExpensePieChartData(
  */
 export function getIncomePieChartData(
   transactions: Transaction[],
-  month: number,
+  month: number | null,
   year: number
 ): PieChartData[] {
   const monthTransactions = transactions.filter((t) => {
     const date = parseLocalDateString(t.date);
-    return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'income';
+    const monthMatches = month === null || date.getMonth() === month - 1;
+    return monthMatches && date.getFullYear() === year && t.type === 'income';
   });
 
   const grouped: Record<string, { total: number; count: number }> = {};
