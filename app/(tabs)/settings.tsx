@@ -5,8 +5,10 @@ import { useAppContext } from '@/lib/app-context';
 import { useI18n } from '@/lib/i18n-context';
 import { useUser } from '@/lib/user-context';
 import { PinVerificationModal } from '@/components/pin-verification-modal';
+import { BankConnectionSection } from '@/components/bank-connection-section';
 import { LANGUAGES, CURRENCIES, DATE_FORMATS } from '@/lib/constants';
 import { Language, Currency, DateFormat, Theme } from '@/lib/types';
+import { formatDate, getLocalizedDateFormatLabel } from '@/lib/utils-calc';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
@@ -48,7 +50,7 @@ export default function SettingsScreen() {
   };
 
   const handlePinVerified = async (pin: string) => {
-    if (!verifyPin(pin)) {
+    if (!(await verifyPin(pin))) {
       Alert.alert(t('common.error'), t('settings.invalid_pin'));
       return;
     }
@@ -94,7 +96,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, jsonString);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
+            Alert.alert(t('common.error'), t('settings.sharingNotAvailable'));
             return;
           }
 
@@ -106,7 +108,7 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('Export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
+        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
       }
     } else if (pendingAction === 'export_txt') {
       try {
@@ -133,15 +135,57 @@ export default function SettingsScreen() {
         
         if (exportDataWithUser.transactions && exportDataWithUser.transactions.length > 0) {
           exportDataWithUser.transactions.forEach((tx: any, idx: number) => {
-            const typeLabel = tx.type === 'income' ? t('transaction.income') : t('transaction.expense');
-            const categoryLabel = t(`categories.${tx.category}`) || tx.category;
+            // Determine transaction type label
+            let typeLabel = '';
+            if (tx.type === 'income') {
+              typeLabel = t('transaction.income');
+            } else if (tx.type === 'transfer') {
+              typeLabel = t('transaction.transfer');
+            } else if (tx.remainingInstallments !== undefined || tx.totalInstallments !== undefined) {
+              typeLabel = t('transaction.installment');
+            } else {
+              typeLabel = t('transaction.expense');
+            }
+            
+            // Determine category label
+            let categoryLabel = '';
+            if (tx.remainingInstallments !== undefined || tx.totalInstallments !== undefined) {
+              categoryLabel = t('categories.loan');
+            } else if (tx.type === 'transfer') {
+              categoryLabel = t('transaction.repayment');
+            } else {
+              categoryLabel = t(`categories.${tx.category}`, tx.category);
+            }
+            
             const currency = state.settings.currency || 'EUR';
             const description = tx.description || tx.notes || '';
+            
+            // Get payment method label
+            let paymentMethodLabel = '';
+            if (tx.paymentMethod) {
+              paymentMethodLabel = t(`paymentMethods.${tx.paymentMethod}`, tx.paymentMethod);
+            } else if (tx.type === 'transfer') {
+              // For transfers, show transfer from/to
+              if (tx.transferFrom) {
+                paymentMethodLabel = t(`paymentMethods.${tx.transferFrom}`, tx.transferFrom);
+              } else if (tx.transferTo) {
+                paymentMethodLabel = t(`paymentMethods.${tx.transferTo}`, tx.transferTo);
+              }
+            }
+            
             txtContent += `${idx + 1}. ${t('transaction.type')}: ${typeLabel}\n`;
             txtContent += `   ${t('transaction.category')}: ${categoryLabel}\n`;
             txtContent += `   ${t('transaction.description')}: ${description}\n`;
+            if (paymentMethodLabel) {
+              txtContent += `   ${t('transaction.paymentMethod')}: ${paymentMethodLabel}\n`;
+            }
+            if (tx.bank) {
+              txtContent += `   ${t('transaction.bank')}: ${tx.bank}\n`;
+            } else if (tx.installmentBank) {
+              txtContent += `   ${t('transaction.bank')}: ${tx.installmentBank}\n`;
+            }
             txtContent += `   ${t('transaction.amount')}: ${tx.amount} ${currency}\n`;
-            txtContent += `   ${t('transaction.date')}: ${new Date(tx.date).toLocaleDateString()}\n\n`;
+            txtContent += `   ${t('transaction.date')}: ${formatDate(tx.date, state.settings.dateFormat)}\n\n`;
           });
         }
         
@@ -167,7 +211,7 @@ export default function SettingsScreen() {
           await FileSystem.writeAsStringAsync(fileUri, txtContent);
 
           if (!(await Sharing.isAvailableAsync())) {
-            Alert.alert(t('common.error'), 'Sharing is not available on this device.');
+            Alert.alert(t('common.error'), t('settings.sharingNotAvailable'));
             return;
           }
 
@@ -179,12 +223,12 @@ export default function SettingsScreen() {
       } catch (error) {
         console.error('TXT export error:', error);
         const errorMsg = error instanceof Error ? error.message : String(error);
-        Alert.alert(t('common.error'), `Export failed: ${errorMsg}`);
+        Alert.alert(t('common.error'), `${t('settings.export_failed')}: ${errorMsg}`);
       }
     } else if (pendingAction === 'import') {
       try {
         if (!selectedImportFile) {
-          Alert.alert(t('common.error'), 'No file selected');
+          Alert.alert(t('common.error'), t('settings.noFileSelected'));
           setPendingAction(null);
           return;
         }
@@ -212,7 +256,7 @@ export default function SettingsScreen() {
 
         // Verify it has transactions
         if (!importedData.transactions || !Array.isArray(importedData.transactions)) {
-          Alert.alert(t('common.error'), 'Invalid backup file format');
+          Alert.alert(t('common.error'), t('settings.invalidBackupFormat'));
           setPendingAction(null);
           setSelectedImportFile(null);
           return;
@@ -220,7 +264,7 @@ export default function SettingsScreen() {
 
         // Import transactions
         console.log('Importing', importedData.transactions.length, 'transactions');
-        importTransactions(importedData.transactions);
+        importTransactions(importedData);
         
         // Save state to AsyncStorage after importing
         await saveState();
@@ -228,12 +272,12 @@ export default function SettingsScreen() {
 
         Alert.alert(
           t('common.success'),
-          `${importedData.transactions.length} transactions imported successfully`
+          `${importedData.transactions.length} ${t('settings.transactionsImportedSuccessfully')}`
         );
         setSelectedImportFile(null);
       } catch (error) {
         console.error('Import error:', error);
-        Alert.alert(t('common.error'), 'Failed to import data');
+        Alert.alert(t('common.error'), t('settings.importFailed'));
         setSelectedImportFile(null);
       }
     }
@@ -266,7 +310,7 @@ export default function SettingsScreen() {
       setImportingFile(false);
     } catch (error) {
       console.error('Import error:', error);
-      Alert.alert(t('common.error'), 'Failed to select file');
+      Alert.alert(t('common.error'), t('settings.selectFileFailed'));
       setImportingFile(false);
     }
   };
@@ -347,7 +391,6 @@ export default function SettingsScreen() {
     }
 
     try {
-      console.log('Setting up initial PIN:', setupNewPin);
       await updatePin(setupNewPin);
       setSetupNewPin('');
       setSetupConfirmPin('');
@@ -377,14 +420,14 @@ export default function SettingsScreen() {
                 paddingVertical: 8,
                 borderRadius: 16,
                 borderWidth: 1,
-                backgroundColor: selectedCode === option.code ? '#0A7EA4' : 'transparent',
-                borderColor: selectedCode === option.code ? '#0A7EA4' : '#334155',
+                backgroundColor: selectedCode === option.code ? colors.primary : 'transparent',
+                borderColor: selectedCode === option.code ? colors.primary : colors.border,
               },
             ]}
           >
             <Text
               style={{
-                color: selectedCode === option.code ? '#FFFFFF' : '#687076',
+                color: selectedCode === option.code ? '#FFFFFF' : colors.muted,
                 fontWeight: '600',
                 fontSize: 12,
               }}
@@ -451,17 +494,17 @@ export default function SettingsScreen() {
           {/* PIN Section */}
           {!pin && !showSetupPinForm ? (
             <View className="gap-3">
-              <Text className="text-base text-foreground font-semibold mb-2">{t('settings.pin')}: Not Set</Text>
+              <Text className="text-base text-foreground font-semibold mb-2">{t('settings.pin')}: {t('settings.pinNotSet')}</Text>
               <Pressable
                 className="bg-primary px-4 py-2 rounded-lg items-center"
                 onPress={() => setShowSetupPinForm(true)}
               >
-                <Text className="text-white font-semibold text-sm">Set PIN</Text>
+                <Text className="text-white font-semibold text-sm">{t('settings.setPin')}</Text>
               </Pressable>
             </View>
           ) : showSetupPinForm ? (
             <View className="gap-3">
-              <Text className="text-base text-foreground font-semibold mb-2">Set Initial PIN</Text>
+              <Text className="text-base text-foreground font-semibold mb-2">{t('settings.setInitialPin')}</Text>
               <View className="relative">
                 <TextInput
                   className="border border-border rounded-lg px-4 py-3 pr-12 text-foreground bg-background"
@@ -629,7 +672,7 @@ export default function SettingsScreen() {
             {t('settings.dateFormat')}
           </Text>
           {renderButtonGroup(
-            DATE_FORMATS.map((d) => ({ code: d.code, label: d.label })),
+            DATE_FORMATS.map((d) => ({ code: d.code, label: getLocalizedDateFormatLabel(d.code, state.settings.language) })),
             state.settings.dateFormat,
             (code) => setDateFormat(code as DateFormat)
           )}
@@ -651,6 +694,9 @@ export default function SettingsScreen() {
           )}
         </View>
 
+        {/* Bank Connections Section */}
+        <BankConnectionSection />
+
         {/* Data Management Section */}
         <View className="mb-6">
           <Text className="text-lg font-bold text-foreground mb-3">
@@ -662,7 +708,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#0A7EA4',
+                backgroundColor: colors.primary,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
@@ -680,7 +726,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#0A7EA4',
+                backgroundColor: colors.primary,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
@@ -698,7 +744,7 @@ export default function SettingsScreen() {
             style={({ pressed }) => [
               {
                 opacity: pressed ? 0.8 : 1,
-                backgroundColor: '#DC2626',
+                backgroundColor: colors.error,
                 paddingVertical: 12,
                 paddingHorizontal: 16,
                 borderRadius: 8,
@@ -736,17 +782,17 @@ export default function SettingsScreen() {
         >
           <View
             style={{
-              backgroundColor: '#fff',
+              backgroundColor: colors.surface,
               borderRadius: 12,
               padding: 20,
               width: '80%',
               maxWidth: 300,
             }}
           >
-            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', marginBottom: 12, color: colors.foreground }}>
               {t('common.confirm')}
             </Text>
-            <Text style={{ fontSize: 14, marginBottom: 20, color: '#666' }}>
+            <Text style={{ fontSize: 14, marginBottom: 20, color: colors.muted }}>
               {t('settings.deleteConfirm')}
             </Text>
             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -758,12 +804,12 @@ export default function SettingsScreen() {
                     paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 8,
-                    backgroundColor: '#E5E7EB',
+                    backgroundColor: colors.border,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}
               >
-                <Text style={{ textAlign: 'center', fontWeight: '600' }}>
+                <Text style={{ textAlign: 'center', fontWeight: '600', color: colors.foreground }}>
                   {t('common.cancel')}
                 </Text>
               </Pressable>
@@ -775,7 +821,7 @@ export default function SettingsScreen() {
                     paddingVertical: 10,
                     paddingHorizontal: 12,
                     borderRadius: 8,
-                    backgroundColor: '#DC2626',
+                    backgroundColor: colors.error,
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}

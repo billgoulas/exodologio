@@ -1,117 +1,283 @@
 import { View, Text, ScrollView } from 'react-native';
-import Svg, { Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Rect, Line, Text as SvgText, TSpan, G } from 'react-native-svg';
 import { DailyChartData, WeeklyChartData, MonthlyChartData } from '@/lib/charts-utils';
 import { formatNumber } from '@/lib/utils-calc';
 import { Language } from '@/lib/types';
+import { translations } from '@/lib/translations';
 
 type ChartData = DailyChartData | WeeklyChartData | MonthlyChartData;
+
+// Picks a human-friendly axis step (50, 100, 250, 1000, ...) instead of
+// dividing the data's max into a fixed number of slices, which produced
+// odd, hard-to-read gridline values like "79€", "159€", "238€" for
+// Installments and "6.957€", "5.566€" for Expense Trend. 14 target ticks
+// lands on 50€ steps for the Installments chart's typical range (a few
+// hundred) and 500€ steps for Expense Trend's (several thousand) with
+// the same formula — no per-chart special-casing needed.
+function getNiceAxisStep(maxValue: number, targetTicks: number = 14): number {
+  if (maxValue <= 0) return 1;
+  const rawStep = maxValue / targetTicks;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+  let niceResidual: number;
+  if (residual <= 1) niceResidual = 1;
+  else if (residual <= 2) niceResidual = 2;
+  else if (residual <= 5) niceResidual = 5;
+  else niceResidual = 10;
+  return niceResidual * magnitude;
+}
+
+const MONTH_KEY_TO_FULL_NAME: Record<string, string> = {
+  jan: 'january',
+  feb: 'february',
+  mar: 'march',
+  apr: 'april',
+  may: 'may',
+  jun: 'june',
+  jul: 'july',
+  aug: 'august',
+  sep: 'september',
+  oct: 'october',
+  nov: 'november',
+  dec: 'december',
+};
 
 interface BarChartProps {
   data: ChartData[];
   title: string;
   language: Language;
   type: 'daily' | 'weekly' | 'monthly';
+  currency?: string;
+  /** Shows each bar's transaction count, centered inside it. Used for the
+   * Installments chart, where seeing "how many" matters as much as the
+   * amount; left off elsewhere so Monthly Comparison/Expense Trend keep
+   * their existing look. */
+  showCounts?: boolean;
 }
 
-export function BarChart({ data, title, language, type }: BarChartProps) {
+export function BarChart({ data, title, language, type, currency = '€', showCounts = false }: BarChartProps) {
+  const t = (key: string, defaultValue: string = key) => {
+    const keys = key.split('.');
+    let value: any = translations[language] || {};
+    for (const k of keys) {
+      if (value && typeof value === 'object' && k in value) {
+        value = value[k];
+      } else {
+        return defaultValue;
+      }
+    }
+    return typeof value === 'string' ? value : defaultValue;
+  };
+
   if (data.length === 0) {
     return (
       <ScrollView className="flex-1">
         <View className="items-center justify-center py-8">
-          <Text className="text-muted">No data available</Text>
+          <Text className="text-muted">{t('analytics.noData')}</Text>
         </View>
       </ScrollView>
     );
   }
 
-  const maxValue = Math.max(...data.map((d) => Math.max(d.income, d.expense)));
-  const chartHeight = 200;
-  const barWidth = 30;
-  const spacing = 10;
-  const chartWidth = data.length * (barWidth * 2 + spacing) + 40;
+  const dataMax = Math.max(...data.map((d) => d.income + d.expense));
+  const axisStep = getNiceAxisStep(dataMax);
+  // Bars and gridlines both scale against this rounded axis max (a
+  // whole multiple of axisStep), not the literal data max, so the tallest
+  // bar lines up with a labeled gridline instead of landing between two.
+  const gridLines = dataMax > 0 ? Math.ceil(dataMax / axisStep) : 5;
+  const maxValue = axisStep * gridLines;
+  const chartHeight = 250;
+  const barWidth = 35;
+  const spacing = 15;
+  // Y-axis labels are amounts formatted with 2 decimals (e.g. "1.234,56"),
+  // which don't fit in the 35px this used to leave them (axis at x=40,
+  // label right-edge at x=5) — most of a multi-digit label rendered at a
+  // negative x and got clipped off the left of the SVG's viewBox, leaving
+  // only a trailing fragment visible. Widening the margin gives them real
+  // room.
+  const axisX = 70;
+  const barsStartX = axisX + 10;
+  const chartWidth = data.length * (barWidth + spacing) + axisX + 30;
+
+  // Axis labels are gridline estimates, not exact figures, so round to a
+  // whole amount and tag it with the currency symbol (e.g. "50€") rather
+  // than the 2-decimal "50,00" the details table below uses for exact
+  // amounts.
+  const formatAxisAmount = (value: number): string => {
+    const formatted = formatNumber(Math.round(value), language);
+    return `${formatted.slice(0, -3)}${currency}`;
+  };
+
+  // Get month abbreviation for display
+  const getMonthLabel = (monthName: string): string => {
+    const monthKey = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].find(
+      (k) => monthName.toLowerCase().startsWith(k)
+    );
+    if (monthKey) {
+      return t(`analytics.${monthKey}Abbr`, monthName.substring(0, 3));
+    }
+    return monthName.substring(0, 3);
+  };
 
   return (
-    <ScrollView className="flex-1" horizontal={true} showsHorizontalScrollIndicator={false}>
+    <ScrollView className="flex-1">
       <View className="py-4 px-4">
         <Text className="text-lg font-bold text-foreground mb-4">{title}</Text>
 
-        {/* Bar Chart SVG */}
-        <Svg width={Math.max(chartWidth, 300)} height={chartHeight + 60} viewBox={`0 0 ${Math.max(chartWidth, 300)} ${chartHeight + 60}`}>
-          {/* Y-axis labels */}
-          <SvgText x="5" y="20" fontSize="10" fill="#687076">
-            {formatNumber(maxValue, language)}
-          </SvgText>
-          <SvgText x="5" y={chartHeight / 2 + 20} fontSize="10" fill="#687076">
-            {formatNumber(maxValue / 2, language)}
-          </SvgText>
-          <SvgText x="5" y={chartHeight + 20} fontSize="10" fill="#687076">
-            0
-          </SvgText>
+        {/* Bar Chart SVG with Stacked Bars */}
+        <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
+          <Svg width={Math.max(chartWidth, 320)} height={chartHeight + 80} viewBox={`0 0 ${Math.max(chartWidth, 320)} ${chartHeight + 80}`}>
+            {/* Grid lines */}
+            {Array.from({ length: gridLines + 1 }).map((_, i) => {
+              const y = chartHeight - (i * chartHeight) / gridLines + 20;
+              return (
+                <Line
+                  key={`grid-${i}`}
+                  x1={axisX}
+                  y1={y}
+                  x2={Math.max(chartWidth, 320) - 10}
+                  y2={y}
+                  stroke="#E5E7EB"
+                  strokeWidth="1"
+                />
+              );
+            })}
 
-          {/* Bars */}
+            {/* Y-axis labels (amounts). As i increases, y moves UP the
+                chart (see the y formula below: higher i means smaller y),
+                so the label's value has to increase with i too, or the
+                labels end up paired with the wrong gridline — "0" at the
+                top and the highest amount at the bottom, backwards from
+                where the bars actually reach. */}
+            {Array.from({ length: gridLines + 1 }).map((_, i) => {
+              const value = axisStep * i;
+              const y = chartHeight - (i * chartHeight) / gridLines + 20;
+              return (
+                <SvgText key={`label-${i}`} x={axisX - 8} y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
+                  <TSpan>{formatAxisAmount(value)}</TSpan>
+                </SvgText>
+              );
+            })}
+
+            {/* Y-axis */}
+            <Line x1={axisX} y1="20" x2={axisX} y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
+
+            {/* X-axis */}
+            <Line x1={axisX} y1={chartHeight + 20} x2={Math.max(chartWidth, 320) - 10} y2={chartHeight + 20} stroke="#334155" strokeWidth="1.5" />
+
+            {/* Stacked Bars */}
+            {data.map((item, index) => {
+              const x = barsStartX + index * (barWidth + spacing);
+              const incomeHeight = maxValue > 0 ? (item.income / maxValue) * chartHeight : 0;
+              const expenseHeight = maxValue > 0 ? (item.expense / maxValue) * chartHeight : 0;
+              const barTopY = chartHeight - incomeHeight - expenseHeight + 20;
+              const barBottomY = chartHeight + 20;
+              const count = item.incomeCount + item.expenseCount;
+
+              return (
+                <G key={index}>
+                  {/* Income bar (bottom, green) */}
+                  <Rect
+                    x={x}
+                    y={chartHeight - incomeHeight + 20}
+                    width={barWidth}
+                    height={incomeHeight}
+                    fill="#22C55E"
+                  />
+                  {/* Expense bar (top, red) */}
+                  <Rect
+                    x={x}
+                    y={barTopY}
+                    width={barWidth}
+                    height={expenseHeight}
+                    fill="#EF4444"
+                  />
+                  {/* Transaction count, centered in the bar */}
+                  {showCounts && count > 0 && (
+                    <SvgText
+                      x={x + barWidth / 2}
+                      y={(barTopY + barBottomY) / 2 + 4}
+                      fontSize="12"
+                      fontWeight="bold"
+                      fill="#FFFFFF"
+                      textAnchor="middle"
+                    >
+                      <TSpan>{count}</TSpan>
+                    </SvgText>
+                  )}
+                </G>
+              );
+            })}
+
+            {/* X-axis labels (month names) */}
+            {data.map((item, index) => {
+              const x = barsStartX + index * (barWidth + spacing) + barWidth / 2;
+              let label = '';
+              if (type === 'daily') {
+                label = (item as DailyChartData).date.split('-')[2]; // Day only
+              } else if (type === 'weekly') {
+                const weekMatch = (item as WeeklyChartData).week.match(/\d+/);
+                label = weekMatch ? `W${weekMatch[0]}` : 'W';
+              } else if (type === 'monthly') {
+                label = getMonthLabel((item as MonthlyChartData).month);
+              }
+              return (
+                <SvgText key={`x-label-${index}`} x={x} y={chartHeight + 40} fontSize="11" fill="#687076" textAnchor="middle">
+                  <TSpan>{label}</TSpan>
+                </SvgText>
+              );
+            })}
+          </Svg>
+        </ScrollView>
+
+        {/* Legend */}
+        <View className="flex-row justify-start gap-6 mt-6 mb-6 px-4">
+          <View className="flex-row items-center">
+            <View className="w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: '#22C55E' }} />
+            <Text className="text-sm text-foreground font-medium">{t('analytics.income')}</Text>
+          </View>
+          <View className="flex-row items-center">
+            <View className="w-3 h-3 rounded-sm mr-2" style={{ backgroundColor: '#EF4444' }} />
+            <Text className="text-sm text-foreground font-medium">{t('analytics.expense')}</Text>
+          </View>
+        </View>
+
+        {/* Details Table - Scrollable */}
+        <ScrollView className="flex-1 w-full px-4" showsVerticalScrollIndicator={false}>
           {data.map((item, index) => {
-            const x = 40 + index * (barWidth * 2 + spacing);
-            const incomeHeight = maxValue > 0 ? (item.income / maxValue) * chartHeight : 0;
-            const expenseHeight = maxValue > 0 ? (item.expense / maxValue) * chartHeight : 0;
-
+            let displayLabel = '';
+            if (type === 'daily') {
+              displayLabel = (item as DailyChartData).date;
+            } else if (type === 'weekly') {
+              const weekMatch = (item as WeeklyChartData).week.match(/\d+/);
+              displayLabel = weekMatch ? `${t('analytics.week')} ${weekMatch[0]}` : (item as WeeklyChartData).week;
+            } else if (type === 'monthly') {
+              const monthName = (item as MonthlyChartData).month;
+              const monthKey = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].find(
+                (k) => monthName.toLowerCase().startsWith(k)
+              );
+              displayLabel = monthKey ? t(`analytics.${MONTH_KEY_TO_FULL_NAME[monthKey]}`, monthName) : monthName;
+            }
             return (
-              <View key={index}>
-                {/* Income bar (green) */}
-                <Rect
-                  x={x}
-                  y={chartHeight - incomeHeight + 20}
-                  width={barWidth}
-                  height={incomeHeight}
-                  fill="#22C55E"
-                />
-                {/* Expense bar (red) */}
-                <Rect
-                  x={x + barWidth}
-                  y={chartHeight - expenseHeight + 20}
-                  width={barWidth}
-                  height={expenseHeight}
-                  fill="#EF4444"
-                />
+              <View key={index} className="mb-3 pb-3 border-b border-border">
+                <Text className="text-base font-semibold text-foreground mb-2">
+                  {displayLabel}
+                </Text>
+                <View className="ml-4">
+                  <Text className="text-sm text-muted mb-1">
+                    {t('analytics.income')}: {formatNumber(item.income, language)} {currency} ({item.incomeCount} {t('analytics.chartTransactions').toLowerCase()})
+                  </Text>
+                  <Text className="text-sm text-muted mb-1">
+                    {t('analytics.expense')}: {formatNumber(item.expense, language)} {currency} ({item.expenseCount} {t('analytics.chartTransactions').toLowerCase()})
+                  </Text>
+                  <Text className="text-sm text-muted">
+                    {t('analytics.balance')}: {formatNumber(item.balance, language)} {currency}
+                  </Text>
+                </View>
               </View>
             );
           })}
-        </Svg>
-
-        {/* Legend */}
-        <View className="flex-row justify-center gap-6 mt-4 mb-6">
-          <View className="flex-row items-center">
-            <View className="w-4 h-4 rounded bg-green-500 mr-2" />
-            <Text className="text-sm text-foreground">Income</Text>
-          </View>
-          <View className="flex-row items-center">
-            <View className="w-4 h-4 rounded bg-red-500 mr-2" />
-            <Text className="text-sm text-foreground">Expense</Text>
-          </View>
-        </View>
-
-        {/* Details Table */}
-        <View className="w-full">
-          {data.map((item, index) => (
-            <View key={index} className="mb-3 pb-3 border-b border-border">
-              <Text className="text-base font-semibold text-foreground mb-2">
-                {type === 'daily' && (item as DailyChartData).date}
-                {type === 'weekly' && (item as WeeklyChartData).week}
-                {type === 'monthly' && (item as MonthlyChartData).month}
-              </Text>
-              <View className="ml-4">
-                <Text className="text-sm text-muted mb-1">
-                  Income: {formatNumber(item.income, language)} ({item.incomeCount} transactions)
-                </Text>
-                <Text className="text-sm text-muted mb-1">
-                  Expense: {formatNumber(item.expense, language)} ({item.expenseCount} transactions)
-                </Text>
-                <Text className="text-sm text-muted">
-                  Balance: {formatNumber(item.balance, language)}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        </ScrollView>
       </View>
     </ScrollView>
   );
