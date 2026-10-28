@@ -74,6 +74,15 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
   const chartWidth = data.length * (barWidth + spacing) + axisX + 30;
   const gridLines = 5;
 
+  // Axis labels are gridline estimates, not exact figures, so round to a
+  // whole amount and tag it with the currency symbol (e.g. "50€") rather
+  // than the 2-decimal "50,00" the details table below uses for exact
+  // amounts.
+  const formatAxisAmount = (value: number): string => {
+    const formatted = formatNumber(Math.round(value), language);
+    return `${formatted.slice(0, -3)}${currency}`;
+  };
+
   // Get month abbreviation for display
   const getMonthLabel = (monthName: string): string => {
     const monthKey = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'].find(
@@ -115,7 +124,7 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
               const y = chartHeight - (i * chartHeight) / gridLines + 20;
               return (
                 <SvgText key={`label-${i}`} x={axisX - 8} y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
-                  <TSpan>{formatNumber(value, language)}</TSpan>
+                  <TSpan>{formatAxisAmount(value)}</TSpan>
                 </SvgText>
               );
             })}
