@@ -29,6 +29,7 @@ export const EXPENSE_CATEGORIES: CategoryInfo[] = [
   { id: 'entertainment', label: 'Ψυχαγωγία', icon: '🎬', type: 'expense' },
   { id: 'accessories', label: 'Αξεσουάρ', icon: '👜', type: 'expense' },
   { id: 'books', label: 'Βιβλίο', icon: '📚', type: 'expense' },
+  { id: 'tutoring', label: 'Φροντιστήριο', icon: '🎓', type: 'expense' },
   { id: 'delivery', label: 'Delivery', icon: '🚚', type: 'expense' },
   { id: 'tolls', label: 'Διόδια', icon: '🛣️', type: 'expense' },
   { id: 'rent', label: 'Ενοίκιο', icon: '🏠', type: 'expense' },
