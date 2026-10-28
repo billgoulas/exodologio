@@ -1,6 +1,6 @@
 import { View, Text, ScrollView } from 'react-native';
 import Svg, { Circle, G, Path, Ellipse, Defs, LinearGradient, Stop, Text as SvgText, TSpan } from 'react-native-svg';
-import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { PieChartData } from '@/lib/charts-utils';
 import { formatNumber, formatPercentage } from '@/lib/utils-calc';
@@ -31,24 +31,64 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
     return typeof value === 'string' ? value : defaultValue;
   };
 
-  // Pinch-to-zoom on the pie itself. Deliberately pinch-only (no pan):
-  // the chart sits inside a vertical ScrollView, and a one-finger pan
-  // gesture on the chart would fight that scroll; a two-finger pinch
-  // doesn't, since scrolling only ever uses one finger.
+  const size = 400;
+  const svgHeight = size + 60;
+
+  // Pinch to zoom, then drag with two fingers to pan around once zoomed
+  // in (the edges of the enlarged chart go off the visible area
+  // otherwise, since zoom is centered). Panning requires two fingers
+  // (.minPointers(2)) specifically so a normal one-finger touch still
+  // falls through to the page's vertical ScrollView instead of being
+  // captured here.
   const zoom = useSharedValue(1);
   const savedZoom = useSharedValue(1);
+  const translateX = useSharedValue(0);
+  const translateY = useSharedValue(0);
+  const savedTranslateX = useSharedValue(0);
+  const savedTranslateY = useSharedValue(0);
+
   const pinchGesture = Gesture.Pinch()
     .onUpdate((e) => {
       zoom.value = Math.min(Math.max(savedZoom.value * e.scale, MIN_ZOOM), MAX_ZOOM);
     })
     .onEnd(() => {
       savedZoom.value = zoom.value;
+      if (zoom.value <= MIN_ZOOM) {
+        // Fully zoomed out — snap back to centered so the next zoom-in
+        // starts fresh instead of off to one side.
+        translateX.value = withTiming(0);
+        translateY.value = withTiming(0);
+        savedTranslateX.value = 0;
+        savedTranslateY.value = 0;
+      }
     });
+
+  const panGesture = Gesture.Pan()
+    .minPointers(2)
+    .onUpdate((e) => {
+      // At zoom z, the content overflows by (z-1) * half the original
+      // size on each side — clamp panning to that so you can't drag the
+      // chart entirely off-screen.
+      const maxPanX = (zoom.value - 1) * (size / 2);
+      const maxPanY = (zoom.value - 1) * (svgHeight / 2);
+      translateX.value = Math.min(Math.max(savedTranslateX.value + e.translationX, -maxPanX), maxPanX);
+      translateY.value = Math.min(Math.max(savedTranslateY.value + e.translationY, -maxPanY), maxPanY);
+    })
+    .onEnd(() => {
+      savedTranslateX.value = translateX.value;
+      savedTranslateY.value = translateY.value;
+    });
+
+  const composedGesture = Gesture.Simultaneous(pinchGesture, panGesture);
+
   const zoomStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: zoom.value }],
+    transform: [
+      { translateX: translateX.value },
+      { translateY: translateY.value },
+      { scale: zoom.value },
+    ],
   }));
 
-  const size = 400;
   const radius = 100;
   const centerX = size / 2;
   const centerY = size / 2 - 20;
@@ -117,9 +157,9 @@ export function PieChart({ data, title, language, currency = '€' }: PieChartPr
         {/* Pie Chart SVG with 3D Effect — pinch to zoom in/out */}
         {data.length > 0 ? (
           <View className="flex-1 items-center justify-center mb-6" style={{ overflow: 'visible' }}>
-            <GestureDetector gesture={pinchGesture}>
+            <GestureDetector gesture={composedGesture}>
               <Animated.View style={zoomStyle}>
-                <Svg width={size} height={size + 60} viewBox={`0 0 ${size} ${size + 60}`}>
+                <Svg width={size} height={svgHeight} viewBox={`0 0 ${size} ${svgHeight}`}>
                   <Defs>
                 <LinearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
                   <Stop offset="0%" stopColor="#ffffff" stopOpacity="0.3" />
