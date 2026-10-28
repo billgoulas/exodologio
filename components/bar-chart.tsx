@@ -7,6 +7,26 @@ import { translations } from '@/lib/translations';
 
 type ChartData = DailyChartData | WeeklyChartData | MonthlyChartData;
 
+// Picks a human-friendly axis step (50, 100, 250, 1000, ...) instead of
+// dividing the data's max into a fixed number of slices, which produced
+// odd, hard-to-read gridline values like "79€", "159€", "238€" for
+// Installments and "6.957€", "5.566€" for Expense Trend. 14 target ticks
+// lands on 50€ steps for the Installments chart's typical range (a few
+// hundred) and 500€ steps for Expense Trend's (several thousand) with
+// the same formula — no per-chart special-casing needed.
+function getNiceAxisStep(maxValue: number, targetTicks: number = 14): number {
+  if (maxValue <= 0) return 1;
+  const rawStep = maxValue / targetTicks;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+  let niceResidual: number;
+  if (residual <= 1) niceResidual = 1;
+  else if (residual <= 2) niceResidual = 2;
+  else if (residual <= 5) niceResidual = 5;
+  else niceResidual = 10;
+  return niceResidual * magnitude;
+}
+
 const MONTH_KEY_TO_FULL_NAME: Record<string, string> = {
   jan: 'january',
   feb: 'february',
@@ -59,7 +79,13 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
     );
   }
 
-  const maxValue = Math.max(...data.map((d) => d.income + d.expense));
+  const dataMax = Math.max(...data.map((d) => d.income + d.expense));
+  const axisStep = getNiceAxisStep(dataMax);
+  // Bars and gridlines both scale against this rounded axis max (a
+  // whole multiple of axisStep), not the literal data max, so the tallest
+  // bar lines up with a labeled gridline instead of landing between two.
+  const gridLines = dataMax > 0 ? Math.ceil(dataMax / axisStep) : 5;
+  const maxValue = axisStep * gridLines;
   const chartHeight = 250;
   const barWidth = 35;
   const spacing = 15;
@@ -72,7 +98,6 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
   const axisX = 70;
   const barsStartX = axisX + 10;
   const chartWidth = data.length * (barWidth + spacing) + axisX + 30;
-  const gridLines = 5;
 
   // Axis labels are gridline estimates, not exact figures, so round to a
   // whole amount and tag it with the currency symbol (e.g. "50€") rather
@@ -125,7 +150,7 @@ export function BarChart({ data, title, language, type, currency = '€', showCo
                 top and the highest amount at the bottom, backwards from
                 where the bars actually reach. */}
             {Array.from({ length: gridLines + 1 }).map((_, i) => {
-              const value = (maxValue / gridLines) * i;
+              const value = axisStep * i;
               const y = chartHeight - (i * chartHeight) / gridLines + 20;
               return (
                 <SvgText key={`label-${i}`} x={axisX - 8} y={y + 4} fontSize="11" fill="#687076" textAnchor="end">
