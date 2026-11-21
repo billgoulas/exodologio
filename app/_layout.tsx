@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "react-native-reanimated";
 import { Platform } from "react-native";
+import { useKeepAwake } from "expo-keep-awake";
 import "@/lib/_core/nativewind-pressable";
 
 import {
@@ -30,7 +31,68 @@ export const unstable_settings = {
   anchor: "(tabs)",
 };
 
+// Defined at module scope (not inside RootLayoutWrapper's render body) so its
+// component identity is stable across renders — a component type recreated
+// on every render is a different type to React, which would unmount and
+// remount this whole subtree (losing the Stack navigator's state) every time
+// RootLayoutWrapper re-renders for something unrelated, like a safe-area update.
+function RootLayoutContent({
+  trpcClient,
+  queryClient,
+}: {
+  trpcClient: ReturnType<typeof createTRPCClient>;
+  queryClient: QueryClient;
+}) {
+  const { state, setLanguage } = useAppContext();
+  const { isLoading, isFirstLaunch } = useUser();
+
+  if (isLoading) {
+    return null; // Show loading state while checking user profile
+  }
+
+  // Wait for app state to be loaded from AsyncStorage before applying theme
+  // This ensures the saved theme preference is applied instead of the default
+  if (!state.settings) {
+    return null;
+  }
+
+  return (
+    <ThemeProvider themePreference={state.settings.theme}>
+      <I18nProvider language={state.settings.language} onLanguageChange={setLanguage}>
+        <trpc.Provider client={trpcClient} queryClient={queryClient}>
+          <QueryClientProvider client={queryClient}>
+            {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
+            {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
+            {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
+            <Stack screenOptions={{ headerShown: false }}>
+              {isFirstLaunch ? (
+                <Stack.Screen name="onboarding" />
+              ) : (
+                <>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="add-transaction" />
+                  <Stack.Screen name="edit-transaction" />
+                  <Stack.Screen name="edit-installment" />
+                  <Stack.Screen name="charts-view" />
+                </>
+              )}
+              <Stack.Screen name="oauth/callback" />
+            </Stack>
+            <StatusBar style="auto" />
+          </QueryClientProvider>
+        </trpc.Provider>
+      </I18nProvider>
+    </ThemeProvider>
+  );
+}
+
 export default function RootLayoutWrapper() {
+  // Keeps the screen on for as long as this component is mounted — i.e. the
+  // whole time the app is running/foregrounded. Once the app is closed or
+  // backgrounded, this has no effect and the device's normal screen-timeout
+  // behavior resumes.
+  useKeepAwake();
+
   const initialInsets = initialWindowMetrics?.insets ?? DEFAULT_WEB_INSETS;
   const initialFrame = initialWindowMetrics?.frame ?? DEFAULT_WEB_FRAME;
 
@@ -86,54 +148,11 @@ export default function RootLayoutWrapper() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppProvider>
         <UserProvider>
-          <RootLayoutContent />
+          <RootLayoutContent trpcClient={trpcClient} queryClient={queryClient} />
         </UserProvider>
       </AppProvider>
     </GestureHandlerRootView>
   );
-
-  function RootLayoutContent() {
-    const { state, setLanguage } = useAppContext();
-    const { isLoading, isFirstLaunch } = useUser();
-
-    if (isLoading) {
-      return null; // Show loading state while checking user profile
-    }
-
-    // Wait for app state to be loaded from AsyncStorage before applying theme
-    // This ensures the saved theme preference is applied instead of the default
-    if (!state.settings) {
-      return null;
-    }
-
-    return (
-      <ThemeProvider themePreference={state.settings.theme}>
-        <I18nProvider language={state.settings.language} onLanguageChange={setLanguage}>
-          <trpc.Provider client={trpcClient} queryClient={queryClient}>
-            <QueryClientProvider client={queryClient}>
-              {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-              {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-              {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-              <Stack screenOptions={{ headerShown: false }}>
-                {isFirstLaunch ? (
-                  <Stack.Screen name="onboarding" />
-                ) : (
-                  <>
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="add-transaction" />
-                    <Stack.Screen name="edit-transaction" />
-                    <Stack.Screen name="analytics" />
-                  </>
-                )}
-                <Stack.Screen name="oauth/callback" />
-              </Stack>
-              <StatusBar style="auto" />
-            </QueryClientProvider>
-          </trpc.Provider>
-        </I18nProvider>
-      </ThemeProvider>
-    );
-  }
 
   const shouldOverrideSafeArea = Platform.OS === "web";
 

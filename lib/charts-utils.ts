@@ -1,5 +1,6 @@
 import { Transaction } from './types';
-import { CATEGORIES_MAP } from './constants';
+import { CATEGORIES_MAP, EXPENSE_CATEGORIES, INCOME_CATEGORIES } from './constants';
+import { parseLocalDateString } from './utils-calc';
 
 export interface PieChartData {
   category: string;
@@ -45,84 +46,104 @@ const CHART_COLORS = [
   '#8B5CF6', '#D946EF', '#EC4899', '#F43F5E', '#64748B',
 ];
 
-/**
- * Get pie chart data for expenses by category
- */
-export function getExpensePieChartData(
+// Shared by every getXPieChartData variant below (month/year, whole year,
+// or an arbitrary date range) — they only differ in which transactions
+// `matchesDate` lets through.
+function buildPieChartData(
   transactions: Transaction[],
-  month: number,
-  year: number
+  type: 'income' | 'expense',
+  matchesDate: (date: Date) => boolean
 ): PieChartData[] {
-  const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
-    return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'expense';
-  });
+  const matching = transactions.filter((t) => t.type === type && matchesDate(parseLocalDateString(t.date)));
 
   const grouped: Record<string, { total: number; count: number }> = {};
-  const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+  const total = matching.reduce((sum, t) => sum + t.amount, 0);
 
-  monthTransactions.forEach((t) => {
-    if (!grouped[t.category]) {
-      grouped[t.category] = { total: 0, count: 0 };
+  matching.filter((t) => t.category !== undefined).forEach((t) => {
+    const cat = t.category!;
+    if (!grouped[cat]) {
+      grouped[cat] = { total: 0, count: 0 };
     }
-    grouped[t.category].total += t.amount;
-    grouped[t.category].count += 1;
+    grouped[cat].total += t.amount;
+    grouped[cat].count += 1;
   });
 
-  return Object.entries(grouped)
-    .map(([category, data], index) => {
-      const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
-      return {
-        category,
-        label: categoryInfo?.label || category,
-        icon: categoryInfo?.icon || '📌',
-        amount: data.total,
-        percentage: total > 0 ? (data.total / total) * 100 : 0,
-        count: data.count,
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+  // Create entries for all categories of this type (including those with 0 amount)
+  const categories = type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
+  const allCategoryData = categories.map((cat, index) => {
+    const data = grouped[cat.id] || { total: 0, count: 0 };
+    return {
+      category: cat.id,
+      label: cat.label,
+      icon: cat.icon,
+      amount: data.total,
+      percentage: total > 0 ? (data.total / total) * 100 : 0,
+      count: data.count,
+      color: CHART_COLORS[index % CHART_COLORS.length],
+    };
+  });
+
+  // Sort by amount (descending), but keep zero-amount categories at the end
+  return allCategoryData.sort((a, b) => {
+    if (a.amount === 0 && b.amount === 0) return 0;
+    if (a.amount === 0) return 1;
+    if (b.amount === 0) return -1;
+    return b.amount - a.amount;
+  });
 }
 
 /**
- * Get pie chart data for income by category
+ * Get pie chart data for expenses by category, for one month or (month:
+ * null) a whole year. Includes all expense categories, even those with 0
+ * amount.
+ */
+export function getExpensePieChartData(
+  transactions: Transaction[],
+  month: number | null,
+  year: number
+): PieChartData[] {
+  return buildPieChartData(
+    transactions,
+    'expense',
+    (date) => (month === null || date.getMonth() === month - 1) && date.getFullYear() === year
+  );
+}
+
+/**
+ * Get pie chart data for income by category, for one month or (month:
+ * null) a whole year. Includes all income categories, even those with 0
+ * amount.
  */
 export function getIncomePieChartData(
   transactions: Transaction[],
-  month: number,
+  month: number | null,
   year: number
 ): PieChartData[] {
-  const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
-    return date.getMonth() === month - 1 && date.getFullYear() === year && t.type === 'income';
-  });
+  return buildPieChartData(
+    transactions,
+    'income',
+    (date) => (month === null || date.getMonth() === month - 1) && date.getFullYear() === year
+  );
+}
 
-  const grouped: Record<string, { total: number; count: number }> = {};
-  const total = monthTransactions.reduce((sum, t) => sum + t.amount, 0);
+/** Same as getExpensePieChartData, but for an arbitrary [fromDate, toDate]
+ * range instead of a calendar month/year. */
+export function getExpensePieChartDataForRange(
+  transactions: Transaction[],
+  fromDate: Date,
+  toDate: Date
+): PieChartData[] {
+  return buildPieChartData(transactions, 'expense', (date) => date >= fromDate && date <= toDate);
+}
 
-  monthTransactions.forEach((t) => {
-    if (!grouped[t.category]) {
-      grouped[t.category] = { total: 0, count: 0 };
-    }
-    grouped[t.category].total += t.amount;
-    grouped[t.category].count += 1;
-  });
-
-  return Object.entries(grouped)
-    .map(([category, data], index) => {
-      const categoryInfo = CATEGORIES_MAP[category as keyof typeof CATEGORIES_MAP];
-      return {
-        category,
-        label: categoryInfo?.label || category,
-        icon: categoryInfo?.icon || '📌',
-        amount: data.total,
-        percentage: total > 0 ? (data.total / total) * 100 : 0,
-        count: data.count,
-        color: CHART_COLORS[index % CHART_COLORS.length],
-      };
-    })
-    .sort((a, b) => b.amount - a.amount);
+/** Same as getIncomePieChartData, but for an arbitrary [fromDate, toDate]
+ * range instead of a calendar month/year. */
+export function getIncomePieChartDataForRange(
+  transactions: Transaction[],
+  fromDate: Date,
+  toDate: Date
+): PieChartData[] {
+  return buildPieChartData(transactions, 'income', (date) => date >= fromDate && date <= toDate);
 }
 
 /**
@@ -134,13 +155,20 @@ export function getDailyChartData(
   year: number
 ): DailyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
   const dailyData: Record<string, DailyChartData> = {};
 
   monthTransactions.forEach((t) => {
+    // Transfers (e.g. moving money between a bank account and a credit
+    // card) are neither income nor expense — the Σύνοψη screen already
+    // excludes them from its totals (tracked separately as "Πληρωμές"),
+    // so this has to match or this chart's expense total disagrees with
+    // that screen's for the same period.
+    if (t.type === 'transfer') return;
+
     if (!dailyData[t.date]) {
       dailyData[t.date] = {
         date: t.date,
@@ -174,14 +202,17 @@ export function getWeeklyChartData(
   year: number
 ): WeeklyChartData[] {
   const monthTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getMonth() === month - 1 && date.getFullYear() === year;
   });
 
   const weeklyData: Record<number, WeeklyChartData> = {};
 
   monthTransactions.forEach((t) => {
-    const date = new Date(t.date);
+    // Transfers aren't income or expense — see getDailyChartData above.
+    if (t.type === 'transfer') return;
+
+    const date = parseLocalDateString(t.date);
     const weekNumber = Math.ceil((date.getDate()) / 7);
     const weekKey = weekNumber;
 
@@ -222,7 +253,7 @@ export function getMonthlyChartData(
   ];
 
   const yearTransactions = transactions.filter((t) => {
-    const date = new Date(t.date);
+    const date = parseLocalDateString(t.date);
     return date.getFullYear() === year;
   });
 
@@ -241,7 +272,14 @@ export function getMonthlyChartData(
   }
 
   yearTransactions.forEach((t) => {
-    const date = new Date(t.date);
+    // Transfers aren't income or expense — see getDailyChartData above.
+    // Without this, a transfer's amount was silently added to "expense"
+    // here, so this chart's monthly expense total didn't match the
+    // Σύνοψη screen's for the same month (which excludes transfers,
+    // tracking them separately as "Πληρωμές").
+    if (t.type === 'transfer') return;
+
+    const date = parseLocalDateString(t.date);
     const monthIndex = date.getMonth();
 
     if (t.type === 'income') {
