@@ -1,7 +1,6 @@
 import React, { createContext, useReducer, useCallback, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { AppState, AppSettings, Transaction, Installment, Language, Currency, DateFormat, Theme, TillEntry, TillExpenseEntry, TillState } from './types';
-import { generateId } from './utils-calc';
+import { AppState, AppSettings, Transaction, Installment, Language, Currency, DateFormat, Theme } from './types';
 
 const STORAGE_KEY = 'exodologio_app_state';
 const SETTINGS_KEY = 'exodologio_settings';
@@ -13,21 +12,10 @@ const defaultSettings: AppSettings = {
   theme: 'auto',
 };
 
-const defaultTillState: TillState = {
-  shiftActive: false,
-  shiftStartedAt: null,
-  shiftEndedAt: null,
-  entries: [],
-  expenses: [],
-  history: [],
-  voiceEnabled: true,
-};
-
 const defaultState: AppState = {
   transactions: [],
   installments: [],
   settings: defaultSettings,
-  till: defaultTillState,
 };
 
 type AppAction =
@@ -44,14 +32,6 @@ type AppAction =
   | { type: 'SET_DATE_FORMAT'; payload: DateFormat }
   | { type: 'SET_THEME'; payload: Theme }
   | { type: 'SET_SETTINGS'; payload: AppSettings }
-  | { type: 'START_SHIFT'; payload: string }
-  | { type: 'END_SHIFT'; payload: string }
-  | { type: 'ADD_TILL_ENTRY'; payload: TillEntry }
-  | { type: 'DELETE_TILL_DAY'; payload: string }
-  | { type: 'DELETE_TILL_ENTRY'; payload: string }
-  | { type: 'ADD_TILL_EXPENSE'; payload: TillExpenseEntry }
-  | { type: 'DELETE_TILL_EXPENSE'; payload: string }
-  | { type: 'SET_TILL_VOICE_ENABLED'; payload: boolean }
   | { type: 'LOAD_STATE'; payload: AppState }
   | { type: 'CLEAR_ALL' };
 
@@ -128,103 +108,6 @@ function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         settings: action.payload,
       };
-    case 'START_SHIFT':
-      // Starting a new shift clears the previous shift's entry list from the
-      // live view — it stays visible after END_SHIFT precisely so it can be
-      // reviewed before the next shift wipes it, and by then it's already
-      // archived into history (see END_SHIFT below).
-      return {
-        ...state,
-        till: { ...state.till, shiftActive: true, shiftStartedAt: action.payload, shiftEndedAt: null, entries: [], expenses: [] },
-      };
-    case 'END_SHIFT': {
-      const completedShift = {
-        id: generateId(),
-        startedAt: state.till.shiftStartedAt ?? action.payload,
-        endedAt: action.payload,
-        entries: state.till.entries,
-        expenses: state.till.expenses,
-      };
-      return {
-        ...state,
-        till: {
-          ...state.till,
-          shiftActive: false,
-          shiftEndedAt: action.payload,
-          history: [completedShift, ...state.till.history],
-        },
-      };
-    }
-    case 'ADD_TILL_ENTRY':
-      return {
-        ...state,
-        till: { ...state.till, entries: [action.payload, ...state.till.entries] },
-      };
-    case 'DELETE_TILL_ENTRY':
-      // An entry can exist in both the live list AND an already-archived
-      // history record at the same time (between End Shift and the next
-      // Start Shift, which is when the live list finally gets cleared) — so
-      // it has to be scrubbed from both places, not just whichever list the
-      // delete button was pressed from.
-      return {
-        ...state,
-        till: {
-          ...state.till,
-          entries: state.till.entries.filter((e) => e.id !== action.payload),
-          history: state.till.history
-            .map((record) => ({
-              ...record,
-              entries: record.entries.filter((e) => e.id !== action.payload),
-            }))
-            .filter((record) => record.entries.length > 0 || record.expenses.length > 0),
-        },
-      };
-    case 'ADD_TILL_EXPENSE':
-      return {
-        ...state,
-        till: { ...state.till, expenses: [action.payload, ...state.till.expenses] },
-      };
-    case 'SET_TILL_VOICE_ENABLED':
-      return {
-        ...state,
-        till: { ...state.till, voiceEnabled: action.payload },
-      };
-    case 'DELETE_TILL_EXPENSE':
-      return {
-        ...state,
-        till: {
-          ...state.till,
-          expenses: state.till.expenses.filter((e) => e.id !== action.payload),
-          history: state.till.history
-            .map((record) => ({
-              ...record,
-              expenses: record.expenses.filter((e) => e.id !== action.payload),
-            }))
-            .filter((record) => record.entries.length > 0 || record.expenses.length > 0),
-        },
-      };
-    case 'DELETE_TILL_DAY':
-      // Strip entries/expenses dated this day out of every archived shift,
-      // and drop any shift left with nothing at all — a shift that spanned
-      // midnight keeps its other-day entries intact. Also strip them from
-      // the live lists: if the deleted day is the most recent one, its data
-      // is still duplicated there (same overlap as DELETE_TILL_ENTRY) and
-      // the live summary/list would otherwise stay stale.
-      return {
-        ...state,
-        till: {
-          ...state.till,
-          entries: state.till.entries.filter((e) => e.date !== action.payload),
-          expenses: state.till.expenses.filter((e) => e.date !== action.payload),
-          history: state.till.history
-            .map((record) => ({
-              ...record,
-              entries: record.entries.filter((e) => e.date !== action.payload),
-              expenses: record.expenses.filter((e) => e.date !== action.payload),
-            }))
-            .filter((record) => record.entries.length > 0 || record.expenses.length > 0),
-        },
-      };
     case 'LOAD_STATE':
       return action.payload;
     case 'CLEAR_ALL':
@@ -255,14 +138,6 @@ interface AppContextType {
   setDateFormat: (format: DateFormat) => void;
   setTheme: (theme: Theme) => void;
   setSettings: (settings: AppSettings) => void;
-  startShift: () => void;
-  endShift: () => void;
-  addTillEntry: (entry: TillEntry) => void;
-  deleteTillDay: (date: string) => void;
-  deleteTillEntry: (id: string) => void;
-  addTillExpense: (expense: TillExpenseEntry) => void;
-  deleteTillExpense: (id: string) => void;
-  setTillVoiceEnabled: (enabled: boolean) => void;
   importTransactions: (data: ImportedBackupData) => void;
   exportData: () => AppState;
   clearAllData: () => void;
@@ -298,36 +173,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
         }
         if (!Array.isArray(parsedState.transactions)) {
           parsedState.transactions = [];
-        }
-        if (typeof parsedState.till !== 'object' || parsedState.till === null) {
-          parsedState.till = defaultTillState;
-        } else {
-          if (!Array.isArray(parsedState.till.entries)) {
-            parsedState.till.entries = [];
-          }
-          if (!Array.isArray(parsedState.till.expenses)) {
-            parsedState.till.expenses = [];
-          }
-          if (typeof parsedState.till.shiftActive !== 'boolean') {
-            parsedState.till.shiftActive = false;
-          }
-          if (typeof parsedState.till.shiftStartedAt !== 'string') {
-            parsedState.till.shiftStartedAt = null;
-          }
-          if (typeof parsedState.till.shiftEndedAt !== 'string') {
-            parsedState.till.shiftEndedAt = null;
-          }
-          if (!Array.isArray(parsedState.till.history)) {
-            parsedState.till.history = [];
-          } else {
-            parsedState.till.history = parsedState.till.history.map((record: Record<string, unknown>) => ({
-              ...record,
-              expenses: Array.isArray(record.expenses) ? record.expenses : [],
-            }));
-          }
-          if (typeof parsedState.till.voiceEnabled !== 'boolean') {
-            parsedState.till.voiceEnabled = true;
-          }
         }
         // Merge over defaultSettings so a missing/corrupted settings object,
         // or one missing individual fields from an older schema version,
@@ -402,38 +247,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: 'SET_SETTINGS', payload: settings });
   }, []);
 
-  const startShift = useCallback(() => {
-    dispatch({ type: 'START_SHIFT', payload: new Date().toISOString() });
-  }, []);
-
-  const endShift = useCallback(() => {
-    dispatch({ type: 'END_SHIFT', payload: new Date().toISOString() });
-  }, []);
-
-  const addTillEntry = useCallback((entry: TillEntry) => {
-    dispatch({ type: 'ADD_TILL_ENTRY', payload: entry });
-  }, []);
-
-  const deleteTillDay = useCallback((date: string) => {
-    dispatch({ type: 'DELETE_TILL_DAY', payload: date });
-  }, []);
-
-  const deleteTillEntry = useCallback((id: string) => {
-    dispatch({ type: 'DELETE_TILL_ENTRY', payload: id });
-  }, []);
-
-  const addTillExpense = useCallback((expense: TillExpenseEntry) => {
-    dispatch({ type: 'ADD_TILL_EXPENSE', payload: expense });
-  }, []);
-
-  const deleteTillExpense = useCallback((id: string) => {
-    dispatch({ type: 'DELETE_TILL_EXPENSE', payload: id });
-  }, []);
-
-  const setTillVoiceEnabled = useCallback((enabled: boolean) => {
-    dispatch({ type: 'SET_TILL_VOICE_ENABLED', payload: enabled });
-  }, []);
-
   const importTransactions = useCallback((importedData: ImportedBackupData) => {
     // Handle both old format (array of transactions) and new format (object with transactions, installments, settings)
     let transactionsToImport: Transaction[] = [];
@@ -502,14 +315,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setDateFormat,
     setTheme,
     setSettings,
-    startShift,
-    endShift,
-    addTillEntry,
-    deleteTillDay,
-    deleteTillEntry,
-    addTillExpense,
-    deleteTillExpense,
-    setTillVoiceEnabled,
     importTransactions,
     exportData,
     clearAllData,
