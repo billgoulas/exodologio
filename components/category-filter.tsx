@@ -19,7 +19,13 @@ export function CategoryFilter({ value, onChange }: CategoryFilterProps) {
     { id: '__all__', label: t('transactions.all'), icon: '📂' },
     ...ALL_CATEGORIES.map((cat) => ({
       id: cat.id,
-      label: t(`categories.${cat.id}`, cat.label),
+      // subscriptions_expense has its own singular Greek label ("Συνδρομή")
+      // for the add/edit category picker, but here it should read the same
+      // as the income "subscriptions" category ("Συνδρομές"), like every
+      // other income/expense pair with a shared concept (investment, gift).
+      label: cat.id === 'subscriptions_expense'
+        ? t('categories.subscriptions', cat.label)
+        : t(`categories.${cat.id}`, cat.label),
       icon: cat.icon,
     })),
     ...PAYMENT_METHODS.map((pm) => ({

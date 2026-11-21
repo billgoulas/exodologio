@@ -191,6 +191,7 @@ export default function TransactionsScreen() {
     if (tx.transferTo) params.set('transferTo', tx.transferTo);
     if (tx.notes) params.set('notes', tx.notes);
     if (tx.bank) params.set('bank', tx.bank);
+    if (tx.reward) params.set('reward', tx.reward);
     params.set('date', tx.date);
     // Pass installment-specific fields if present
     if (tx.installmentPaymentMethod) params.set('installmentPaymentMethod', tx.installmentPaymentMethod);

@@ -42,6 +42,7 @@ export default function AddTransactionScreen() {
     notes?: string;
     date?: string;
     bank?: string;
+    reward?: string;
     installmentPaymentMethod?: string;
     installmentBank?: string;
     remainingInstallments?: string;
@@ -77,7 +78,7 @@ export default function AddTransactionScreen() {
   const [notes, setNotes] = useState(initNotes as any);
   const initBank = (params as any)?.bank || '';
   const [bank, setBank] = useState(initBank);
-  const [reward, setReward] = useState('');
+  const [reward, setReward] = useState(params.reward || '');
   
   // Installment state - initialize from params if duplicating
   const [installmentAmount, setInstallmentAmount] = useState(initAmount);
