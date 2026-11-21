@@ -8,7 +8,7 @@ export const INCOME_CATEGORIES: CategoryInfo[] = [
   { id: 'gift', label: 'Δώρο', icon: '🎀', type: 'income' },
   { id: 'rent_income', label: 'Ενοίκιο', icon: '🏠', type: 'income' },
   { id: 'reward', label: 'Επιβράβευση', icon: '🎆', type: 'income' },
-  { id: 'subscriptions', label: 'Συνδρομές', icon: '🔄', type: 'income' },
+  { id: 'subscriptions', label: 'Συνδρομή', icon: '🔄', type: 'income' },
   { id: 'other_income', label: 'Άλλο', icon: '📍', type: 'income' },
 ];
 

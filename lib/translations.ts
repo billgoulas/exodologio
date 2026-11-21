@@ -294,7 +294,7 @@ export const translations: Translations = {
       gift: 'Δώρο',
       rent_income: 'Ενοίκιο',
       reward: 'Επιβράβευση',
-      subscriptions: 'Συνδρομές',
+      subscriptions: 'Συνδρομή',
       other_income: 'Άλλο',
       groceries: 'Σουπερμάρκετ',
       department_store: 'Πολυκατάστημα',
